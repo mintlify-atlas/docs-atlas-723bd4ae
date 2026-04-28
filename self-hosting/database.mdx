@@ -1,0 +1,86 @@
+---
+title: "Database setup and migrations with Drizzle"
+description: "Configure PostgreSQL for CVR-MATE, apply schema changes with Drizzle Kit migrations, and use Drizzle Studio to browse and edit your database tables."
+---
+
+CVR-MATE uses PostgreSQL as its database and Drizzle ORM for schema management and query building. Drizzle Kit provides the CLI commands you will use to create, migrate, and inspect the database during both development and production deployments.
+
+## Connecting to PostgreSQL
+
+Set the `DATABASE_URL` environment variable in your `.env.local` file using the standard PostgreSQL connection string format:
+
+```bash
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+```
+
+Drizzle Kit reads this variable automatically from `.env.local` (via `dotenv/config`) when running any `db:*` command.
+
+## Schema management commands
+
+<Tip>
+  Use `pnpm db:push` when setting up a fresh database for the first time or during active local development. For any database that already has data — especially in staging or production — use `pnpm db:generate` followed by `pnpm db:migrate` to apply changes through tracked migration files.
+</Tip>
+
+| Command | Description |
+|---|---|
+| `pnpm db:push` | Introspects your schema and pushes it directly to the database without generating migration files. Fast for first-time setup and prototyping. |
+| `pnpm db:generate` | Compares the current schema against previous migrations and generates new migration files in the `drizzle/` directory. |
+| `pnpm db:migrate` | Applies all pending migration files in `drizzle/` to the database in order. |
+| `pnpm db:studio` | Launches Drizzle Studio — a browser-based UI for browsing tables, filtering rows, and editing records. |
+
+<Warning>
+  Do not run `pnpm db:push` against a production database. It can silently drop columns or tables that are no longer in the schema. Use `pnpm db:migrate` in production to apply changes safely through versioned migration files.
+</Warning>
+
+## Schema overview
+
+The following table groups the main database tables by domain. This is a high-level reference — refer to `db/app-schema.ts` for full column definitions.
+
+| Domain | Tables |
+|---|---|
+| **Core** | `company`, `saved_company`, `saved_search`, `lead_trigger`, `trigger_result` |
+| **User & activity** | `notification`, `todo`, `company_note`, `activity`, `org_audit_log` |
+| **Billing** | `subscription`, `usage_record` |
+| **AI** | `company_briefing`, `outreach_message`, `profile_enrichment` |
+| **CRM** | `crm_connection`, `crm_sync_mapping`, `crm_sync_log` |
+| **Person tracking** | `followed_person`, `person_company_index`, `person_role_snapshot`, `person_role_event` |
+
+### Core
+
+- **`company`** — cached CVR registry data for Danish companies, with denormalized fields for fast filtering (industry, city, employee count, status, etc.)
+- **`saved_company`** — user bookmarks linking users to companies, with optional tags and notes
+- **`saved_search`** — saved CVR search filter sets that can be reused or used as trigger criteria
+- **`lead_trigger`** — scheduled lead monitoring rules with filter criteria, cron scheduling config, and run history
+- **`trigger_result`** — output snapshots from each trigger execution, storing matched companies and counts
+
+### User & activity
+
+- **`notification`** — in-app notifications with type, priority, read state, and optional deep-link
+- **`todo`** — tasks attached to companies and optionally assigned to team members
+- **`company_note`** — free-text notes associated with a company and user
+- **`activity`** — unified audit timeline of user actions across entities
+- **`org_audit_log`** — team-level audit trail of organization management events (membership changes, role changes, etc.)
+
+### Billing
+
+- **`subscription`** — Stripe subscription state per user, including plan, status, and billing period
+- **`usage_record`** — per-feature usage events used to enforce monthly quotas
+
+### AI
+
+- **`company_briefing`** — persisted AI-generated briefings for individual companies
+- **`outreach_message`** — saved AI-drafted outreach messages (email, LinkedIn, phone scripts)
+- **`profile_enrichment`** — AI-generated enrichment data for companies and people
+
+### CRM
+
+- **`crm_connection`** — OAuth connections to external CRMs (HubSpot, LeadConnector, Pipedrive) with encrypted tokens
+- **`crm_sync_mapping`** — maps local CVR-MATE entities to their counterparts in a connected CRM
+- **`crm_sync_log`** — audit log of individual sync operations and their outcomes
+
+### Person tracking
+
+- **`followed_person`** — CVR participants that a user is monitoring for changes
+- **`person_company_index`** — reverse index mapping participants to companies for efficient change feed queries
+- **`person_role_snapshot`** — last-known role state for a participant at a company, used as the baseline for diffing
+- **`person_role_event`** — immutable log of detected role and company status changes, deduplicated by hash

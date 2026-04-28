@@ -1,0 +1,139 @@
+---
+title: "Environment variables reference"
+description: "Every environment variable CVR-MATE reads, what each one does, whether it is required, and safe example values to help you configure your deployment."
+---
+
+CVR-MATE reads its configuration exclusively from environment variables. For local development, copy `.env.example` to `.env.local` and fill in each value. In production, set the same variables in your hosting environment or secrets manager. Variables prefixed with `NEXT_PUBLIC_` are bundled into the client-side JavaScript and are readable in the browser — never put secrets in those variables.
+
+<Note>
+  Never commit your `.env.local` file or any file containing real secrets to version control. At minimum, add `.env.local` and `.env` to your `.gitignore`. The `.env.example` file in the repository is safe to commit because it contains only placeholder values.
+</Note>
+
+## Core
+
+These variables are required for the application to start. Without them, database connections, authentication, the CVR API, and AI features will not work.
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string. | Yes | `postgresql://user:pass@localhost:5432/cvrmate` |
+| `BETTER_AUTH_SECRET` | Secret used to sign sessions and tokens. Must be at least 32 characters. | Yes | `a-long-random-string-at-least-32-chars` |
+| `BETTER_AUTH_URL` | Canonical base URL of your deployment, used by Better Auth for redirects and email links. | Yes | `https://app.yourdomain.com` |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | Same value as `BETTER_AUTH_URL`, exposed to the client for auth SDK calls. | Yes | `https://app.yourdomain.com` |
+| `CVR_API_KEY` | API token for the CVR registry API (cvrapi.dk). All company search and profile requests use this key. | Yes | `your-cvrapi-token` |
+| `GEMINI_API_KEY` | Google Gemini API key for all AI features: briefings, outreach drafts, search parsing, and todo suggestions. | Yes | `AIza...` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL, used for video storage (feature explainer videos). | Optional | `https://xxxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key for server-side storage operations. Keep secret — has admin-level access. | Optional | `eyJhbGc...` |
+
+## Authentication
+
+CVR-MATE supports email/password login out of the box. Google OAuth is optional but strongly recommended for teams that prefer single sign-on.
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `GOOGLE_CLIENT_ID` | OAuth 2.0 client ID from Google Cloud Console. | Optional | `123456789-abc.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 client secret from Google Cloud Console. | Optional | `GOCSPX-...` |
+
+<Tip>
+  To enable Google OAuth, create a project in the [Google Cloud Console](https://console.cloud.google.com), enable the Google+ API, and add your `BETTER_AUTH_URL/api/auth/callback/google` as an authorized redirect URI.
+</Tip>
+
+## Cache and queue
+
+These variables connect CVR-MATE to Upstash for Redis caching and QStash-based background job scheduling. The app functions without Redis, but caching improves search performance. QStash is required for scheduled lead triggers to run automatically.
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | REST endpoint URL for your Upstash Redis database. | Optional | `https://your-db.upstash.io` |
+| `UPSTASH_REDIS_REST_TOKEN` | Authentication token for the Upstash Redis REST API. | Optional | `AX...` |
+| `CRON_SECRET` | Bearer token used to authenticate manual or local cron calls to `/api/cron/*`. | Optional | `a-random-secret-string` |
+| `QSTASH_CURRENT_SIGNING_KEY` | Current signing key from Upstash QStash, used to verify incoming job delivery. | Optional | `sig_...` |
+| `QSTASH_NEXT_SIGNING_KEY` | Next signing key from Upstash QStash, used during key rotation. | Optional | `sig_...` |
+
+<Info>
+  Find your QStash signing keys at [console.upstash.com](https://console.upstash.com) under **QStash → Signing Keys**. Both current and next keys are needed to handle seamless key rotation without dropping queued jobs.
+</Info>
+
+## CRM integrations
+
+These variables enable the HubSpot, LeadConnector, and Pipedrive integrations. Only configure the providers you plan to use. The encryption key is required if any CRM integration is active, because CVR-MATE encrypts stored OAuth tokens at rest.
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `CRM_TOKEN_ENCRYPTION_KEY` | 32-byte hex key used to encrypt CRM OAuth tokens stored in the database. Generate with `openssl rand -hex 32`. | Required if using any CRM | `a1b2c3d4...` (64 hex chars) |
+| `HUBSPOT_CLIENT_ID` | HubSpot OAuth app client ID. | Optional | `abc123...` |
+| `HUBSPOT_CLIENT_SECRET` | HubSpot OAuth app client secret. | Optional | `xxxxxxxx-xxxx-...` |
+| `LEADCONNECTOR_CLIENT_ID` | LeadConnector OAuth app client ID. | Optional | `abc123...` |
+| `LEADCONNECTOR_CLIENT_SECRET` | LeadConnector OAuth app client secret. | Optional | `...` |
+| `PIPEDRIVE_CLIENT_ID` | Pipedrive OAuth app client ID. | Optional | `abc123...` |
+| `PIPEDRIVE_CLIENT_SECRET` | Pipedrive OAuth app client secret. | Optional | `...` |
+
+<Warning>
+  The `CRM_TOKEN_ENCRYPTION_KEY` must remain constant after first use. Rotating it invalidates all stored CRM tokens and will disconnect all active CRM integrations until users reconnect.
+</Warning>
+
+## Billing
+
+Stripe powers CVR-MATE's subscription plans. The secret key and webhook secret are server-only. The publishable key and all price IDs are `NEXT_PUBLIC_` variables used client-side to initiate checkout sessions.
+
+CVR-MATE offers three paid plans billed in DKK:
+
+| Plan | Monthly | Annual (per month) |
+|---|---|---|
+| Starter | 299 DKK | 239 DKK |
+| Professional | 699 DKK | 559 DKK |
+| Enterprise | 1,699 DKK | 1,359 DKK |
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `STRIPE_SECRET_KEY` | Stripe secret API key. Never expose this on the client. | Yes, for billing | `sk_live_...` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key, used client-side to initialize Stripe.js. | Yes, for billing | `pk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret from your Stripe webhook endpoint. Found in **Stripe Dashboard → Webhooks → Signing secret**. | Yes, for billing | `whsec_...` |
+| `NEXT_PUBLIC_STRIPE_STARTER_MONTHLY_PRICE_ID` | Stripe Price ID for the Starter monthly plan (299 DKK/month). | Yes, for billing | `price_...` |
+| `NEXT_PUBLIC_STRIPE_STARTER_ANNUAL_PRICE_ID` | Stripe Price ID for the Starter annual plan (2,868 DKK/year). | Yes, for billing | `price_...` |
+| `NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID` | Stripe Price ID for the Professional monthly plan (699 DKK/month). | Yes, for billing | `price_...` |
+| `NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID` | Stripe Price ID for the Professional annual plan (6,708 DKK/year). | Yes, for billing | `price_...` |
+| `NEXT_PUBLIC_STRIPE_ENT_MONTHLY_PRICE_ID` | Stripe Price ID for the Enterprise monthly plan (1,699 DKK/month). | Yes, for billing | `price_...` |
+| `NEXT_PUBLIC_STRIPE_ENT_ANNUAL_PRICE_ID` | Stripe Price ID for the Enterprise annual plan (16,308 DKK/year). | Yes, for billing | `price_...` |
+
+<Tip>
+  To test Stripe webhooks locally, run `stripe listen --forward-to localhost:3000/api/stripe/webhook`. The CLI prints a temporary webhook signing secret — set that as `STRIPE_WEBHOOK_SECRET` in your `.env.local`.
+</Tip>
+
+## Email
+
+CVR-MATE uses Resend as the primary transactional email provider and falls back to SMTP (e.g. Gmail) when Resend is unavailable. Email is used for account verification, password reset, welcome messages, and team invitations.
+
+### Resend (primary)
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `RESEND_API_KEY` | API key from [resend.com](https://resend.com) → **API Keys**. | Yes, for email | `re_...` |
+| `EMAIL_FROM_ADDRESS` | Sender address. Must be a domain verified in your Resend account. | Yes, for email | `hello@yourdomain.com` |
+| `EMAIL_FROM_NAME` | Display name shown in the From field of all outgoing emails. | Optional | `CVR-MATE` |
+| `RESEND_WEBHOOK_SECRET` | Signing secret from Resend → **Webhooks**. Used to verify delivery event webhooks. | Optional | `whsec_...` |
+
+### SMTP / Gmail fallback
+
+CVR-MATE supports two Gmail/SMTP fallback options: App Password (simpler) and OAuth2 (more secure for production).
+
+**Option A — Gmail App Password**
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `SMTP_HOST` | SMTP server hostname. | Optional | `smtp.gmail.com` |
+| `SMTP_PORT` | SMTP server port. | Optional | `587` |
+| `SMTP_USER` | SMTP username (your Gmail address). | Optional | `you@gmail.com` |
+| `SMTP_PASS` | App password (16 characters, no spaces). Generate at **Google Account → Security → App passwords**. | Optional | `abcdabcdabcdabcd` |
+
+**Option B — Gmail OAuth2**
+
+| Variable | Description | Required | Example |
+|---|---|---|---|
+| `GMAIL_USER` | Gmail address used for OAuth2 sending. | Optional | `you@gmail.com` |
+| `GMAIL_OAUTH2_CLIENT_ID` | Google Cloud OAuth2 client ID for Gmail. | Optional | `123456-abc.apps.googleusercontent.com` |
+| `GMAIL_OAUTH2_CLIENT_SECRET` | Google Cloud OAuth2 client secret for Gmail. | Optional | `GOCSPX-...` |
+| `GMAIL_OAUTH2_REFRESH_TOKEN` | OAuth2 refresh token obtained during the consent flow. | Optional | `1//04...` |
+
+<Info>
+  If you use Gmail with 2-step verification enabled, you must use either an app password or OAuth2. Standard account passwords are rejected by Google's SMTP servers when 2FA is active.
+</Info>

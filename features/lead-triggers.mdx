@@ -1,0 +1,101 @@
+---
+title: "Automated lead triggers and monitoring"
+description: "Set up scheduled CVR searches that run daily or weekly and send in-app notifications whenever new companies match your target filters."
+---
+
+Lead triggers let you define a set of company search filters once and have CVR-MATE re-run that search on a schedule. Every time the trigger fires it finds companies that match your criteria, stores the results, and notifies you — so new companies that enter your target segment surface automatically without any manual effort.
+
+## How triggers work
+
+<Steps>
+  <Step title="Define your filters">
+    Choose the same CVR search filters you would use in `/search`: industry code, location, employee range, company form, founding date, and more.
+  </Step>
+  <Step title="Choose a frequency">
+    Select how often the trigger should run: **daily**, **weekly**, or a **custom** cron schedule.
+  </Step>
+  <Step title="Pick notification channels">
+    Choose how you want to be alerted when new matches are found. In-app notifications are enabled by default.
+  </Step>
+  <Step title="Activate and monitor">
+    The trigger is scheduled automatically. Each run stores matched companies and updates the trigger's last-run timestamp. Open the trigger to browse historical results.
+  </Step>
+</Steps>
+
+## Creating a trigger
+
+Navigate to `/triggers` and click **New trigger**. Fill in the following fields:
+
+| Field | Description |
+|---|---|
+| **Name** | A descriptive label for this trigger (e.g. "New SaaS companies in Copenhagen") |
+| **Filters** | CVR search parameters: industry code, location, employee range, etc. |
+| **Frequency** | `daily`, `weekly`, or `custom` |
+| **Scheduled time** | Hour (0–23) and minute (0–59) at which the trigger runs |
+| **Day of week** | For weekly triggers, which day to fire (0 = Sunday … 6 = Saturday) |
+| **Timezone** | IANA timezone string; defaults to `Europe/Copenhagen` |
+| **Notification channels** | Channels to notify on match; `in_app` is always included |
+
+## Trigger frequency options
+
+<CardGroup cols={3}>
+  <Card title="Daily">
+    Runs every day at the configured hour and minute. Ideal for high-volume segments where companies register frequently.
+  </Card>
+  <Card title="Weekly">
+    Runs once per week on the specified day. Good for niche segments where weekly cadence is sufficient.
+  </Card>
+  <Card title="Custom">
+    Provide a raw cron expression for full control over the schedule. The expression is stored alongside the computed next-run timestamp.
+  </Card>
+</CardGroup>
+
+## Running a trigger manually
+
+Any trigger can be run immediately — independent of its schedule — using the **Run now** button on the trigger detail page. This is useful for testing a new trigger or pulling fresh results without waiting for the next scheduled run.
+
+Manual runs call `/api/triggers/[id]/run` and behave identically to scheduled runs: results are stored, the `lastRunAt` timestamp is updated, and notifications are dispatched if matches are found.
+
+## Trigger results
+
+Each run appends a result record containing:
+
+- The list of matched companies (full CVR company objects)
+- A `matchCount` integer for quick summary
+- The timestamp the run completed
+
+Results are accessible from the trigger detail page and are retained indefinitely until you delete the trigger.
+
+## Notification channels
+
+Currently supported notification channels:
+
+| Channel | Description |
+|---|---|
+| `in_app` | Real-time in-app notification (always enabled) |
+
+Additional channels (email, webhook) are planned for future releases.
+
+## Scheduling details
+
+Internally, each trigger stores:
+
+```
+scheduledHour    — 0–23 (default 8)
+scheduledMinute  — 0–59 (default 0)
+scheduledDayOfWeek — 0–6, null for daily
+timezone         — IANA string (default "Europe/Copenhagen")
+cronExpression   — derived expression, e.g. "0 8 * * 1"
+nextRunAt        — precomputed UTC timestamp of the next firing
+lastRunAt        — UTC timestamp of the most recent run
+```
+
+The `nextRunAt` value is recomputed after each run using `computeNextRun` in `lib/cron.ts`, which converts the scheduled local time to UTC accounting for the configured timezone and daylight saving transitions.
+
+<Note>
+Team-shared triggers — visible and manageable by all members of an organization — are available on the **Enterprise** plan. On lower plans, triggers are personal to the user who created them.
+</Note>
+
+<Warning>
+If you leave a team or are removed from an organization, any triggers associated with that organization are automatically deactivated. You will need to recreate them under your personal account or within the new organization context.
+</Warning>

@@ -1,0 +1,67 @@
+---
+title: "Real-time notifications and activity feed"
+description: "CVR-MATE delivers in-app notifications in real time via Server-Sent Events, with four priority levels, read state tracking, and a persistent notification feed."
+---
+
+CVR-MATE delivers notifications to you in real time without any page refresh. When a lead trigger fires and finds new companies, when an export completes, or when a followed person's role changes, the notification appears in your navbar immediately. All notifications are also persisted to the database so you can review them later.
+
+## Notification types
+
+| Type | When it fires |
+|---|---|
+| `trigger` | A lead trigger ran and found companies matching your filters |
+| `system` | Platform announcements, maintenance notices, and account events |
+| `export` | An export job completed (PDF or Excel file is ready) |
+| `person_follow` | A followed participant had a role added, removed, or updated at one of their companies |
+
+## Priority levels
+
+Each notification carries a priority that controls how prominently it is displayed:
+
+| Priority | Meaning |
+|---|---|
+| `low` | Informational; no badge increment |
+| `normal` | Standard notification; increments the unread badge |
+| `high` | Important event; displayed more prominently in the feed |
+| `urgent` | Requires immediate attention; visually distinct in the UI |
+
+## Viewing notifications
+
+The **notification bell** in the top navigation bar shows a badge with the count of unread notifications. Click the bell to open the notification panel, which lists the 30 most recent notifications in reverse chronological order.
+
+From the panel you can:
+
+- **Mark as read** — click an individual notification to mark it read and, if it has a link, navigate to the relevant page
+- **Mark all as read** — clears the unread badge for all notifications at once in a single API call to `/api/notifications/read-all`
+
+## SSE delivery
+
+Notifications are pushed to the browser over a persistent **Server-Sent Events** (SSE) connection. The stream endpoint is:
+
+```
+GET /api/notifications/stream
+```
+
+The connection stays open for the lifetime of your browser session. The server sends a heartbeat comment every 30 seconds to prevent proxies and load balancers from closing idle connections.
+
+<Info>
+The SSE heartbeat is a no-op `": heartbeat"` comment line sent every 30 seconds. It keeps the TCP connection alive through most reverse proxy timeout windows so your notification stream is not silently dropped during quiet periods.
+</Info>
+
+Events delivered over the stream follow this structure:
+
+```json
+{
+  "type": "new" | "read" | "deleted" | "read-all",
+  "notification": { ... },
+  "id": "<notification-id>"
+}
+```
+
+The browser client listens for these events and updates the notification badge and panel without a full page reload.
+
+## Multi-instance deployments
+
+The current SSE fan-out is **in-process**: when a notification is created, it is immediately published to all open SSE connections for that user within the same server process. This works correctly for single-instance (single Node.js process) deployments.
+
+If you run CVR-MATE across multiple instances (e.g. horizontally scaled behind a load balancer), a user's SSE connection may land on a different instance than the one that created the notification. In that case, replace the in-process `NotificationBus` in `lib/notifications.ts` with a shared pub/sub layer such as Redis pub/sub to fan out events across all instances.

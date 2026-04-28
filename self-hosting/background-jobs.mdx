@@ -1,0 +1,84 @@
+---
+title: "Background jobs and cron trigger scheduling"
+description: "How CVR-MATE's two cron endpoints work, how to schedule them via Upstash QStash, and how to invoke them manually with a bearer token for local testing."
+---
+
+CVR-MATE uses two background job endpoints to power its lead trigger scheduling and person-change monitoring features. These endpoints are secured HTTP routes that can be called by a scheduler (Upstash QStash) on a defined interval, or triggered manually using a shared secret for local development and one-off runs.
+
+## Cron endpoints
+
+### `/api/cron/triggers`
+
+Processes all active lead triggers that are due to run. For each due trigger, the endpoint queries the CVR registry using the trigger's saved filters, identifies newly matching companies, stores the results, and sends notifications to the trigger's owner. After processing, each trigger's `nextRunAt` timestamp is advanced to the next scheduled time.
+
+### `/api/cron/person-changes`
+
+Checks all followed people for role or status changes. The endpoint fetches the current CVR data for each tracked participant, compares it against the stored `person_role_snapshot`, writes new `person_role_event` rows for any detected changes, and dispatches notifications to users who follow the affected person.
+
+## Authentication
+
+Both cron endpoints accept requests authenticated in one of two ways:
+
+1. **Upstash QStash signature verification** (primary) — QStash signs each request with your signing keys. The endpoint verifies the `Upstash-Signature` header using `QSTASH_CURRENT_SIGNING_KEY` and `QSTASH_NEXT_SIGNING_KEY`.
+2. **Bearer token fallback** — for local testing or manual invocation, send an `Authorization: Bearer <CRON_SECRET>` header.
+
+## Setting up QStash
+
+<Note>
+  QStash is optional. If you do not configure it, both cron endpoints are still fully functional — you just need to trigger them manually or wire them up to your own scheduler.
+</Note>
+
+1. Create a free account at [console.upstash.com](https://console.upstash.com) and open the **QStash** section.
+2. Copy your **Current Signing Key** and **Next Signing Key** from the QStash dashboard.
+3. Add them to your `.env.local`:
+
+   ```bash
+   QSTASH_CURRENT_SIGNING_KEY=your_current_signing_key
+   QSTASH_NEXT_SIGNING_KEY=your_next_signing_key
+   ```
+
+4. In QStash, create a new scheduled message pointing to your deployed domain:
+
+   ```
+   https://your-domain.com/api/cron/triggers
+   ```
+
+   Set the schedule to your preferred interval — for example, `0 * * * *` to run every hour. Repeat for `/api/cron/person-changes` at your desired frequency.
+
+## Manual trigger
+
+To invoke a cron endpoint outside of QStash — useful during development or for on-demand runs — use the `CRON_SECRET` bearer token:
+
+<Tip>
+  Set `CRON_SECRET` to any strong random string in your `.env.local`. This lets you authenticate manual cron calls locally without needing QStash keys.
+</Tip>
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://your-domain.com/api/cron/triggers
+```
+
+For local development, replace the domain with `http://localhost:3000`:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  http://localhost:3000/api/cron/triggers
+```
+
+## Stripe webhook
+
+CVR-MATE uses Stripe for billing. To receive subscription lifecycle events (payments, cancellations, plan changes), configure a webhook in the Stripe Dashboard pointing to:
+
+```
+https://your-domain.com/api/stripe/webhook
+```
+
+Set the `STRIPE_WEBHOOK_SECRET` environment variable to the signing secret shown in the Stripe Dashboard under **Webhooks**.
+
+For local testing, use the Stripe CLI to forward events to your dev server:
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+The CLI will print a temporary webhook signing secret — use that as `STRIPE_WEBHOOK_SECRET` while testing locally.

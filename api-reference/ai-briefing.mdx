@@ -1,0 +1,181 @@
+---
+title: "AI company briefing and pipeline analysis"
+description: "POST endpoints for AI company briefings, pipeline analysis, natural-language search parsing, and AI-generated todo suggestions powered by Google Gemini."
+---
+
+CVR-MATE's AI endpoints use Google Gemini to generate intelligent insights about Danish companies. The briefing and analysis endpoints help you understand a prospect at a glance, turn plain-English queries into structured CVR filters, get AI-suggested next steps for any company, and receive a narrative health check on your entire pipeline — all in a single API call.
+
+<Note>
+  All AI endpoints count against your monthly `aiUsages` quota. Limits per plan are: **5/mo** (Free), **10/mo** (Starter), **50/mo** (Professional), and **unlimited** (Enterprise). Todo suggestions use a separate `aiTaskSuggest` quota: **3/mo** (Free), **20/mo** (Starter), **unlimited** (Professional and Enterprise).
+</Note>
+
+<Warning>
+  When you exceed the Gemini rate limit, every AI endpoint returns HTTP `429` with the body `{ "error": "AI rate limit reached. Please wait a moment and try again." }`. Back off and retry after a short delay.
+</Warning>
+
+## POST /api/ai/company-briefing
+
+Generates a structured AI briefing for a Danish company identified by its CVR (VAT) number. The briefing is saved to the database and cached per user and VAT combination, so repeated requests for the same company are fast and do not consume additional quota.
+
+The underlying model is `gemini-2.5-flash` by default. On transient failures the request is retried up to three times before an error is returned.
+
+### Request body
+
+<ParamField body="vat" type="string" required>
+  The 8-digit CVR (VAT) number of the target company.
+</ParamField>
+
+<ParamField body="companyName" type="string" required>
+  The registered name of the company. Used to personalise the Gemini prompt.
+</ParamField>
+
+```json
+{
+  "vat": "12345678",
+  "companyName": "Acme A/S"
+}
+```
+
+### Response
+
+<ResponseField name="briefing" type="string">
+  A narrative prose summary of the company — its business model, market position, and recent activity.
+</ResponseField>
+
+<ResponseField name="keyInsights" type="string[]">
+  An array of concise, actionable insights about the company (e.g. growth signals, hiring patterns, risk indicators).
+</ResponseField>
+
+<ResponseField name="suggestedApproach" type="string">
+  A recommended outreach approach tailored to the company profile, derived from your brand profile settings.
+</ResponseField>
+
+```json
+{
+  "briefing": "Acme A/S is a mid-sized technology consultancy headquartered in Copenhagen...",
+  "keyInsights": [
+    "Headcount grew 22 % year-on-year",
+    "Recently expanded into cloud services",
+    "No current public procurement contracts"
+  ],
+  "suggestedApproach": "Lead with a cloud cost-optimisation angle; decision-maker is likely the CTO."
+}
+```
+
+---
+
+## POST /api/ai/parse-search
+
+Converts a plain-English search query into a structured CVR filter object. This lets users type natural-language queries in the search bar and have them automatically translated into precise API filter parameters.
+
+### Request body
+
+<ParamField body="query" type="string" required>
+  A natural-language description of the companies you are looking for.
+</ParamField>
+
+```json
+{
+  "query": "tech companies in Copenhagen with 10-50 employees"
+}
+```
+
+### Response
+
+The response is a structured CVR filter object. Only fields that can be inferred from the query are included; all others are omitted.
+
+<ResponseField name="city" type="string">
+  City name extracted from the query.
+</ResponseField>
+
+<ResponseField name="industry" type="string">
+  DB07 industry code (e.g. `"620000"` for IT/software consultancy).
+</ResponseField>
+
+<ResponseField name="minEmployees" type="number">
+  Lower bound for the employee count filter.
+</ResponseField>
+
+<ResponseField name="maxEmployees" type="number">
+  Upper bound for the employee count filter.
+</ResponseField>
+
+```json
+{
+  "city": "Copenhagen",
+  "industry": "620000",
+  "minEmployees": 10,
+  "maxEmployees": 50
+}
+```
+
+---
+
+## POST /api/ai/suggest-todos
+
+Returns a list of AI-suggested sales tasks for a given company. Suggestions are based on the company's CVR data and your brand profile, and are designed to be imported directly into the CVR-MATE task list.
+
+### Request body
+
+<ParamField body="vat" type="string" required>
+  The 8-digit CVR (VAT) number of the target company.
+</ParamField>
+
+<ParamField body="companyName" type="string" required>
+  The registered name of the company.
+</ParamField>
+
+```json
+{
+  "vat": "12345678",
+  "companyName": "Acme A/S"
+}
+```
+
+### Response
+
+<ResponseField name="todos" type="object[]">
+  An array of suggested task objects.
+
+  <Expandable title="Todo object">
+    <ResponseField name="title" type="string">
+      A short, actionable task title (e.g. "Send introductory email to CEO").
+    </ResponseField>
+
+    <ResponseField name="priority" type="string">
+      Suggested priority level. One of `"low"`, `"medium"`, or `"high"`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "todos": [
+    { "title": "Research Acme A/S recent LinkedIn activity", "priority": "medium" },
+    { "title": "Send introductory email to CEO", "priority": "high" },
+    { "title": "Add Acme A/S to pipeline as qualified lead", "priority": "low" }
+  ]
+}
+```
+
+---
+
+## POST /api/ai/analyze-pipeline
+
+Produces a narrative health analysis of your current sales pipeline. No request body is required — the endpoint reads the authenticated user's pipeline data automatically and returns a prose summary with suggested next steps.
+
+### Request body
+
+No body required. Authentication is handled via the session cookie.
+
+### Response
+
+<ResponseField name="analysis" type="string">
+  A narrative analysis of the current pipeline state, including deal-stage distribution, stale leads, and recommended actions.
+</ResponseField>
+
+```json
+{
+  "analysis": "Your pipeline contains 14 active prospects. Three leads in the 'qualified' stage have had no activity in over 14 days — consider following up this week. Two new companies matching your saved trigger fired yesterday and have not yet been reviewed..."
+}
+```

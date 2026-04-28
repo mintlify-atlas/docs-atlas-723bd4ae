@@ -1,0 +1,88 @@
+---
+title: "AI outreach drafting for email, LinkedIn, and phone"
+description: "POST /api/ai/draft-outreach — generate personalized sales messages for email, LinkedIn, and phone scripts. Personalized via your onboarding brand profile."
+---
+
+The outreach drafting endpoint generates personalized sales messages based on the target company's CVR data and your brand profile. You specify the target company, the channel (email, LinkedIn, or phone script), and the desired tone — CVR-MATE uses Google Gemini to produce a ready-to-send message along with a suggested follow-up. Results are persisted per user and VAT combination for later retrieval.
+
+<Tip>
+  Outreach quality improves significantly when your brand profile is complete. Make sure you have set your company name, products or services, target audience, and preferred tone during onboarding. Brand personalization is available on the Starter plan and above.
+</Tip>
+
+<Note>
+  Outreach drafts count against separate per-channel monthly quotas. Limits per plan are:
+
+  | Channel | Free | Starter | Professional | Enterprise |
+  |---|---|---|---|---|
+  | Email drafts | 3 | 5 | 30 | Unlimited |
+  | LinkedIn drafts | 3 | 5 | 30 | Unlimited |
+  | Phone scripts | 3 | 5 | 30 | Unlimited |
+</Note>
+
+## POST /api/ai/draft-outreach
+
+Drafts a personalized outreach message for the specified company and channel. The model used is `gemini-2.5-flash`, with up to three automatic retries on transient failures.
+
+### Request body
+
+<ParamField body="vat" type="string" required>
+  The 8-digit CVR (VAT) number of the target company.
+</ParamField>
+
+<ParamField body="companyName" type="string" required>
+  The registered name of the target company.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  The outreach channel. One of `"email"`, `"linkedin"`, or `"phone_script"`.
+</ParamField>
+
+<ParamField body="tone" type="string" required>
+  The desired tone for the message. One of `"formal"` or `"casual"`.
+</ParamField>
+
+### Response
+
+<ResponseField name="type" type="string">
+  The message channel, echoed from the request (`"email"`, `"linkedin"`, or `"phone_script"`).
+</ResponseField>
+
+<ResponseField name="tone" type="string">
+  The message tone, echoed from the request (`"formal"` or `"casual"`).
+</ResponseField>
+
+<ResponseField name="subject" type="string | null">
+  The email subject line. Populated when `type` is `"email"`; `null` for other channels.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  The full drafted message body, ready to copy or send.
+</ResponseField>
+
+<ResponseField name="followUp" type="string">
+  A suggested follow-up message to use if the prospect does not respond within a week.
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST https://your-domain.com/api/ai/draft-outreach \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "vat": "12345678",
+    "companyName": "Acme A/S",
+    "type": "email",
+    "tone": "formal"
+  }'
+```
+
+```json
+{
+  "type": "email",
+  "tone": "formal",
+  "subject": "Helping Acme A/S grow their customer base",
+  "message": "Dear [Name],\n\nI noticed that Acme A/S has been expanding its cloud services division and I believe we may be able to support that growth...",
+  "followUp": "If I don't hear back in a week, I'll follow up briefly to see if the timing is better."
+}
+```

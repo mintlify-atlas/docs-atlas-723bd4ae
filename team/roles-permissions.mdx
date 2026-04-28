@@ -1,0 +1,89 @@
+---
+title: "Team roles and permissions: Owner, Admin, Member"
+description: "CVR-MATE teams use three roles — Owner, Admin, and Member — with distinct permissions controlling who can invite, remove, and edit shared team resources."
+---
+
+CVR-MATE teams use three roles: **Owner**, **Admin**, and **Member**. Every member of an organization holds exactly one role at a time. Roles determine who can invite, remove, or manage other members, and who can edit shared resources created by colleagues.
+
+## Role descriptions
+
+<CardGroup cols={3}>
+  <Card title="Owner" icon="crown">
+    Full control over the organization. Can invite and remove any member, change roles, transfer ownership, rename the org, and delete it. There is always exactly one owner per organization.
+  </Card>
+  <Card title="Admin" icon="shield">
+    Can invite members and other admins, remove members with a lower role rank, and rename the organization. Cannot change roles, transfer ownership, or delete the org.
+  </Card>
+  <Card title="Member" icon="user">
+    Can view all shared team resources and create or edit their own resources. Cannot invite or remove others.
+  </Card>
+</CardGroup>
+
+## Permissions table
+
+| Action | Owner | Admin | Member |
+|--------|:-----:|:-----:|:------:|
+| Create org | ✓ | — | — |
+| Invite member / admin | ✓ | ✓ | — |
+| Remove member | ✓ | ✓* | — |
+| Remove admin | ✓ | — | — |
+| Change role | ✓ | — | — |
+| Transfer ownership | ✓ | — | — |
+| Rename org | ✓ | ✓ | — |
+| Delete org | ✓ | — | — |
+| Leave org | — | ✓ | ✓ |
+| View team resources | ✓ | ✓ | ✓ |
+| Edit / delete own resources | ✓ | ✓ | ✓ |
+| Edit / delete others' resources | ✓ | ✓ | — |
+
+\* Admins can only remove members whose role rank is lower than their own.
+
+## Role rank hierarchy
+
+Roles have a numeric rank used to enforce the rule above:
+
+| Role | Rank |
+|------|:----:|
+| Owner | 3 |
+| Admin | 2 |
+| Member | 1 |
+
+<Note>
+  An actor can only act on members with a **strictly lower** rank. An admin (rank 2) can remove a member (rank 1) but cannot remove another admin (rank 2) or the owner (rank 3). This is enforced server-side on every remove and role-change request.
+</Note>
+
+## Resource-level authorization
+
+Being a member of an organization does not grant blanket write access to everything in it. Resource-level rules apply on top of role permissions:
+
+- **Members** can only edit or delete resources they personally created, even if those resources are in team scope.
+- **Admins and owners** can edit or delete any resource that belongs to the team.
+
+Personal-scope resources (those created outside of team scope) are always private — no team member can access them regardless of role.
+
+## Transferring ownership
+
+The owner can transfer their role to any existing member of the organization.
+
+<Steps>
+  <Step title="Open Team settings">
+    Go to **Settings → Team** and find the member you want to make the new owner.
+  </Step>
+  <Step title="Initiate transfer">
+    Click **Transfer ownership** and select the target member.
+  </Step>
+  <Step title="Confirm">
+    Read the confirmation prompt — "You will become an admin after this transfer" — and confirm.
+  </Step>
+</Steps>
+
+After the transfer:
+- The selected member's role changes to **Owner**.
+- Your role changes to **Admin**.
+- The change is recorded in the audit log as `ownership_transferred`.
+
+You cannot transfer ownership to yourself, and the target must already be a member of the organization.
+
+<Tip>
+  Assign the **Admin** role to team leads who need to manage day-to-day membership (inviting new hires, removing departed colleagues) without granting them the ability to delete the organization or reassign roles broadly. Reserve **Owner** for the account holder or primary decision-maker.
+</Tip>

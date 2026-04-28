@@ -1,0 +1,60 @@
+---
+title: "What is CVR-MATE? B2B Lead Intelligence Platform"
+description: "CVR-MATE is a B2B lead intelligence platform that connects Danish sales teams to CVR registry data, AI-powered workflows, and CRM sync in one place."
+---
+
+CVR-MATE is an automated B2B lead intelligence platform built for Danish sales teams. It connects directly to the Danish CVR registry — the authoritative source for all registered Danish companies — so you can search, monitor, and act on company data without switching between tools. Whether you're prospecting new accounts, tracking changes at existing customers, or scaling outreach across a pipeline, CVR-MATE brings the data and the workflow into a single application.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="CVR search" icon="magnifying-glass" href="/features/cvr-search">
+    Search and filter 700,000+ Danish companies by industry code, location, company type, employee count, and founding date. Save companies and searches for later.
+  </Card>
+  <Card title="Lead triggers" icon="bell" href="/features/lead-triggers">
+    Create automated monitors with your target filters and a schedule. CVR-MATE runs the search for you and alerts you when new matching companies appear.
+  </Card>
+  <Card title="AI tools" icon="sparkles" href="/features/ai-tools">
+    Generate company briefings, parse natural-language queries into structured filters, draft personalized outreach emails and LinkedIn messages, and get AI-suggested todos.
+  </Card>
+  <Card title="CRM integrations" icon="plug" href="/features/crm-integrations">
+    Push companies and contacts directly to HubSpot, Pipedrive, or LeadConnector. Supports bulk sync and per-company pushes from the company profile.
+  </Card>
+  <Card title="Notifications" icon="envelope" href="/features/notifications">
+    Receive real-time in-app alerts over a persistent Server-Sent Events stream when triggers fire, team members act, or followed people have registry changes.
+  </Card>
+  <Card title="Exports" icon="arrow-down-to-line" href="/features/exports">
+    Export your saved companies and search results to PDF or Excel/XLSX. Plan limits apply per month; higher-tier plans unlock larger export quotas.
+  </Card>
+</CardGroup>
+
+## Architecture overview
+
+CVR-MATE is a Next.js 16 App Router application backed by PostgreSQL and deployed as a Node.js server. The application is organized into a small set of clear layers:
+
+- **`app/`** — Next.js App Router pages and API route handlers
+- **`components/`** — UI and feature components built with Tailwind CSS 4 and shadcn/ui
+- **`db/`** — Drizzle ORM schema and database client
+- **`lib/`** — Domain logic: auth, AI, CVR API client, cron scheduling, notifications, Stripe billing, i18n, and CRM adapters
+- **`middleware.ts`** — Route protection and team invitation rate limiting
+
+Key architectural patterns:
+
+- **Server-Sent Events (SSE)** power the real-time notification stream at `/api/notifications/stream`. The current fan-out is in-process via `lib/notifications.ts`, which works for single-instance deployments. For horizontally scaled deployments, replace the fan-out with a shared Redis pub/sub channel.
+- **Background jobs** run as secured API endpoints (`/api/cron/triggers`, `/api/cron/person-changes`) verified by Upstash QStash signatures, with a fallback `CRON_SECRET` bearer token for local development.
+- **AI features** are powered by Google Gemini via `@google/generative-ai`. All AI endpoints include retry handling and rate-limit messaging.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Styling | Tailwind CSS 4, shadcn/ui |
+| Database | PostgreSQL with Drizzle ORM |
+| Authentication | Better Auth (email/password + Google OAuth, organization plugin) |
+| Cache & queue | Upstash Redis, Upstash QStash |
+| AI | Google Generative AI (Gemini) |
+| Billing | Stripe (subscriptions, webhooks) |
+| Email | Resend (primary), Nodemailer/SMTP (fallback) |
+| State management | Zustand, TanStack React Query |
+| 3D / animation | Three.js, React Three Fiber, GSAP |

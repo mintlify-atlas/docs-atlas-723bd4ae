@@ -1,0 +1,374 @@
+---
+title: "GET /api/cvr/company — Fetch company by VAT"
+description: "GET /api/cvr/company — fetch a full CVR company profile by VAT number, including participants, financials, and employment history. Results are Redis-cached."
+---
+
+The company endpoint returns the complete CVR record for a single Danish company identified by its 8-digit VAT/CVR number. Data is sourced from the CVR API and cached in Redis; subsequent requests for the same VAT are served from cache until the TTL expires. The response is wrapped in a `company` key and includes the full `CvrCompany` object — address, company form, status, contact details, industry classification, financial summaries, employment history, and director/owner participants.
+
+## Request
+
+```
+GET /api/cvr/company
+```
+
+### Query parameters
+
+<ParamField query="vat" type="string" required>
+  The 8-digit Danish CVR/VAT registration number (e.g. `12345678`). Non-numeric values or numbers that are not exactly 8 digits are rejected with a `400` error.
+</ParamField>
+
+## Response
+
+```json
+{
+  "company": { ... }
+}
+```
+
+<ResponseField name="company" type="object">
+  The full `CvrCompany` object from the CVR registry.
+
+  <Expandable title="Top-level fields">
+    <ResponseField name="vat" type="number">
+      CVR/VAT registration number. This is the unique identifier for the company in the Danish business registry.
+    </ResponseField>
+
+    <ResponseField name="slug" type="string">
+      URL-friendly slug assigned by the CVR registry.
+    </ResponseField>
+
+    <ResponseField name="life" type="object">
+      <Expandable title="life fields">
+        <ResponseField name="life.name" type="string">
+          Legal company name.
+        </ResponseField>
+        <ResponseField name="life.start" type="string | null">
+          Founding date as an ISO date string (e.g. `2010-03-15`).
+        </ResponseField>
+        <ResponseField name="life.end" type="string | null">
+          Dissolution date. `null` when the company is still active.
+        </ResponseField>
+        <ResponseField name="life.adprotected" type="boolean">
+          Whether the company has opted out of advertising under Danish marketing law.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="address" type="object">
+      <Expandable title="address fields">
+        <ResponseField name="address.street" type="string | null">
+          Registered street address.
+        </ResponseField>
+        <ResponseField name="address.zipcode" type="number | null">
+          Postal code.
+        </ResponseField>
+        <ResponseField name="address.cityname" type="string | null">
+          City name.
+        </ResponseField>
+        <ResponseField name="address.municipalityname" type="string | null">
+          Municipality name.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="companyform" type="object">
+      <Expandable title="companyform fields">
+        <ResponseField name="companyform.code" type="number | null">
+          Numeric company form code (e.g. `80` = ApS, `81` = A/S).
+        </ResponseField>
+        <ResponseField name="companyform.description" type="string | null">
+          Short company type label (e.g. `Anpartsselskab`).
+        </ResponseField>
+        <ResponseField name="companyform.longdescription" type="string | null">
+          Full company type description from the CVR registry.
+        </ResponseField>
+        <ResponseField name="companyform.holding" type="boolean">
+          Whether the company is classified as a holding company.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="companystatus" type="object">
+      <Expandable title="companystatus fields">
+        <ResponseField name="companystatus.text" type="string | null">
+          Human-readable status label (e.g. `NORMAL`, `OPLØST EFTER FUSION`).
+        </ResponseField>
+        <ResponseField name="companystatus.start" type="string | null">
+          ISO date when the current status was set.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="contact" type="object">
+      <Expandable title="contact fields">
+        <ResponseField name="contact.email" type="string | null">
+          Registered contact email address.
+        </ResponseField>
+        <ResponseField name="contact.www" type="string | null">
+          Company website URL.
+        </ResponseField>
+        <ResponseField name="contact.phone" type="string | null">
+          Registered phone number.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="industry" type="object">
+      <Expandable title="industry fields">
+        <ResponseField name="industry.primary.code" type="number | null">
+          Primary NACE industry code.
+        </ResponseField>
+        <ResponseField name="industry.primary.text" type="string | null">
+          Primary industry description.
+        </ResponseField>
+        <ResponseField name="industry.secondary" type="array">
+          Array of secondary industry entries. Each entry has `sequence` (number), `code` (number), and `text` (string).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="status" type="object">
+      <Expandable title="status fields">
+        <ResponseField name="status.code" type="number | null">
+          Numeric registry status code.
+        </ResponseField>
+        <ResponseField name="status.bankrupt" type="boolean">
+          Whether the company has been declared bankrupt.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="accounting" type="object">
+      Financial data sourced from publicly filed annual reports. May be absent if the company has not filed or if documents are unavailable.
+
+      <Expandable title="accounting fields">
+        <ResponseField name="accounting.documents" type="array">
+          Array of accounting document objects. Each document may include a `summary` object with the following fields:
+
+          <Expandable title="summary fields">
+            <ResponseField name="summary.revenue" type="number | null">
+              Net revenue (DKK).
+            </ResponseField>
+            <ResponseField name="summary.grossprofitloss" type="number | null">
+              Gross profit or loss (DKK).
+            </ResponseField>
+            <ResponseField name="summary.profitloss" type="number | null">
+              Net profit or loss (DKK).
+            </ResponseField>
+            <ResponseField name="summary.equity" type="number | null">
+              Total equity (DKK).
+            </ResponseField>
+            <ResponseField name="summary.assets" type="number | null">
+              Total assets (DKK).
+            </ResponseField>
+            <ResponseField name="summary.averagenumberofemployees" type="number | null">
+              Average number of employees for the reporting period.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="employment" type="object">
+      Historical employee headcount data reported to the CVR registry.
+
+      <Expandable title="employment fields">
+        <ResponseField name="employment.months" type="array">
+          Monthly employment entries with `year`, `month`, `amount`, `interval_low`, and `interval_high`.
+        </ResponseField>
+        <ResponseField name="employment.quarters" type="array">
+          Quarterly employment entries with `year`, `quarter`, `amount`, `interval_low`, and `interval_high`.
+        </ResponseField>
+        <ResponseField name="employment.years" type="array">
+          Annual employment entries with `year`, `amount`, `interval_low`, and `interval_high`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="info" type="object">
+      Supplementary company information.
+
+      <Expandable title="info fields">
+        <ResponseField name="info.capital_amount" type="number | null">
+          Registered share capital amount.
+        </ResponseField>
+        <ResponseField name="info.capital_currency" type="string | null">
+          Currency of the registered share capital (e.g. `DKK`).
+        </ResponseField>
+        <ResponseField name="info.purpose" type="string | null">
+          Stated company purpose from the articles of association.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="participants" type="array">
+      Directors, owners, board members, and other registered participants. Each entry represents one person–role pair for this company.
+
+      <Expandable title="participant entry fields">
+        <ResponseField name="participants[].participantnumber" type="number">
+          Unique CVR participant identifier.
+        </ResponseField>
+        <ResponseField name="participants[].life.name" type="string">
+          Participant's full name.
+        </ResponseField>
+        <ResponseField name="participants[].life.profession" type="string | null">
+          Stated profession.
+        </ResponseField>
+        <ResponseField name="participants[].life.deceased" type="boolean">
+          Whether the participant is recorded as deceased.
+        </ResponseField>
+        <ResponseField name="participants[].address" type="object">
+          Participant address (street, zipcode, cityname, countrycode). May be absent if the participant has opted out of address publication.
+        </ResponseField>
+        <ResponseField name="participants[].roles" type="object">
+          The role this participant holds in the company.
+
+          <Expandable title="role fields">
+            <ResponseField name="roles.type" type="string">
+              Role type. One of: `accountant`, `board`, `branch_manager`, `daily_management`, `director`, `founder`, `fully_responsible_participant`, `liquidator`, `owner`, `real_owner`, `supervisory_board`.
+            </ResponseField>
+            <ResponseField name="roles.life.start" type="string | null">
+              Date the role commenced (ISO date).
+            </ResponseField>
+            <ResponseField name="roles.life.end" type="string | null">
+              Date the role ended. `null` for active roles.
+            </ResponseField>
+            <ResponseField name="roles.life.title" type="string | null">
+              Optional custom title for the role.
+            </ResponseField>
+            <ResponseField name="roles.life.owner_percent" type="number | null">
+              Ownership percentage, if the role is `owner` or `real_owner`.
+            </ResponseField>
+            <ResponseField name="roles.life.owner_voting_percent" type="number | null">
+              Voting share percentage.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Missing or malformed `vat` parameter (must be exactly 8 digits). |
+| `404`  | Company not found in the CVR registry. |
+| `500`  | Upstream CVR API failure. |
+
+### Caching
+
+Company data is cached in Redis using a configurable TTL (see `CACHE_TTL.company` in `lib/cache.ts`). A background cron worker (`/api/cron/person-changes`) refreshes data for followed participants. You can force a fresh fetch by calling the endpoint after the TTL has expired, or by using the internal `getCompanyByVatFresh` utility in server-side code.
+
+<Note>
+  The CVR registry is the authoritative source for Danish company data. Cached records may lag the live registry by up to the configured TTL period.
+</Note>
+
+---
+
+## GET /api/cvr/participant — Fetch participant/director profile
+
+Returns the full profile for a CVR participant (a person or legal entity registered as a director, owner, or board member), including all of their company affiliations and roles across the registry.
+
+### Request
+
+```
+GET /api/cvr/participant
+```
+
+### Query parameters
+
+<ParamField query="id" type="string" required>
+  The CVR participant number (numeric, e.g. `4001234567`). Non-numeric values are rejected with a `400` error.
+</ParamField>
+
+<ParamField query="fromVat" type="string">
+  The 8-digit VAT number of the company where this participant was first encountered. Providing this improves accuracy: if the CVR participant endpoint does not return company affiliations directly, the route falls back to extracting roles from the originating company's participant list.
+</ParamField>
+
+### Response
+
+```json
+{
+  "participant": { ... }
+}
+```
+
+<ResponseField name="participant" type="object">
+  A `CvrParticipant` object — the raw participant data from CVR enriched with a normalised `companies` array.
+
+  <Expandable title="participant fields">
+    <ResponseField name="participantnumber" type="number">
+      Unique CVR participant identifier.
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      URL-friendly participant slug.
+    </ResponseField>
+    <ResponseField name="life.name" type="string">
+      Full legal name of the participant.
+    </ResponseField>
+    <ResponseField name="life.profession" type="string | null">
+      Stated profession.
+    </ResponseField>
+    <ResponseField name="life.deceased" type="boolean">
+      Whether the participant is recorded as deceased in the CVR registry.
+    </ResponseField>
+    <ResponseField name="address" type="object">
+      Participant address (street, zipcode, cityname, countrycode, freetext). May be absent if the participant has opted out of address publication (`unlisted: true`).
+    </ResponseField>
+    <ResponseField name="contact" type="object">
+      Optional contact info (email, www, phone) when registered.
+    </ResponseField>
+    <ResponseField name="companies" type="array">
+      Array of `CvrParticipation` objects representing every company this participant is or was affiliated with. Each entry includes:
+
+      <Expandable title="CvrParticipation fields">
+        <ResponseField name="vat" type="number">
+          VAT number of the affiliated company.
+        </ResponseField>
+        <ResponseField name="slug" type="string">
+          Company slug.
+        </ResponseField>
+        <ResponseField name="life.name" type="string">
+          Company name.
+        </ResponseField>
+        <ResponseField name="life.start" type="string | null">
+          Company founding date.
+        </ResponseField>
+        <ResponseField name="life.end" type="string | null">
+          Dissolution date, or `null` if active.
+        </ResponseField>
+        <ResponseField name="companyform.description" type="string | null">
+          Company type label.
+        </ResponseField>
+        <ResponseField name="companystatus.text" type="string | null">
+          Company status (e.g. `NORMAL`, `OPLØST`).
+        </ResponseField>
+        <ResponseField name="roles" type="array">
+          Array of roles held by this participant in the company. Each role has `type`, `life.start`, `life.end`, `life.title`, `life.owner_percent`, and `life.owner_voting_percent`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Missing or non-numeric `id` parameter. |
+| `404`  | Participant not found in the CVR registry. |
+| `500`  | Upstream CVR API failure. |
+
+---
+
+## Example
+
+```bash
+# Fetch full company profile
+curl "https://your-domain.com/api/cvr/company?vat=12345678"
+
+# Fetch participant profile with originating company hint
+curl "https://your-domain.com/api/cvr/participant?id=4001234567&fromVat=12345678"
+```

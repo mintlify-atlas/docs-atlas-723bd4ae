@@ -1,81 +1,102 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
-icon: 'rocket'
+title: "Get started with CVR-MATE in 10 minutes"
+description: "Create your account, complete onboarding, run your first CVR company search, and set up a lead trigger — all in under ten minutes."
 ---
 
-## Get started in three steps
+This page walks you through everything you need to go from a blank account to running your first CVR company search and having an automated lead trigger in place. If you are self-hosting CVR-MATE, there is a section at the end covering local setup.
 
-Get your documentation site running locally and make your first customization.
+<Info>
+  The hosted version of CVR-MATE requires no local installation. If you are using the hosted app, skip directly to step 1.
+</Info>
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+If you are self-hosting, you need the following before you start:
 
-### Step 2: Deploy your changes
+- **Node.js** LTS (v20 or later recommended)
+- **pnpm** package manager
+- **PostgreSQL** database (v14 or later)
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+## Get up and running
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Steps>
+  <Step title="Create your account">
+    Navigate to `/signup` and register with your email address and a password of at least 8 characters, or sign in with Google OAuth for immediate access.
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    After signing up with email and password, CVR-MATE sends a verification email to the address you provided. Click the link in that email to verify your account — login is blocked until verification is complete. Once you click the link, you are signed in automatically.
 
-### Step 3: Go live
+    <Tip>
+      If you do not receive the verification email within a few minutes, try signing in again. CVR-MATE automatically resends the verification email when an unverified account attempts to log in.
+    </Tip>
+  </Step>
+  <Step title="Complete onboarding">
+    After your first successful login, you are redirected to `/onboarding`. This one-time setup screen collects your **brand profile**: your company name, industry, and a short description of your ideal customer. CVR-MATE uses this profile to personalize AI-generated briefings and outreach drafts so they reflect your voice and positioning.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    Complete all fields and click **Finish setup** to reach your dashboard.
+  </Step>
+  <Step title="Run your first CVR search">
+    Go to `/search`. The search page queries the Danish CVR registry in real time. Use the filter panel to narrow results by:
 
-## Next steps
+    - **Industry code (branchekode)** — filter by one or more NACE industry codes
+    - **Municipality** — narrow by Danish municipality or region
+    - **Company type** — e.g. A/S, ApS, I/S
+    - **Employee count** — set a minimum and maximum headcount range
+    - **Founded between** — restrict results to companies founded within a date range
 
-Now that you have your docs running, explore these key features:
+    You can also type a natural-language description into the search bar — the AI search parser converts your description into structured filters automatically.
 
-<CardGroup cols={2}>
+    Click any result to open the full company profile at `/company/[vat]`. From the profile you can save the company, create todos, push to your CRM, or generate an AI briefing.
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    <Tip>
+      Click **Save search** on any filtered query to store it as a reusable saved search at `/saved-searches`. You can rerun it at any time or turn it into a lead trigger.
+    </Tip>
+  </Step>
+  <Step title="Save a company and create a lead trigger">
+    On any company profile, click **Save** to add the company to your watchlist at `/saved`. Saved companies are tracked across sessions and count toward your plan's saved-company limit (5 on Free, 25 on Starter, 100 on Professional, unlimited on Enterprise).
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    To automate prospecting, go to `/triggers` and click **New trigger**. Choose your target filters — the same options available in the search page — and set a schedule (daily or weekly). CVR-MATE runs the query on that schedule and sends you an in-app notification whenever new matching companies appear in the registry.
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    <Info>
+      The Free plan allows 1 active trigger. Upgrade to Starter (3 triggers), Professional (5 triggers), or Enterprise (unlimited) to run more concurrent monitors.
+    </Info>
+  </Step>
+  <Step title="Generate an AI briefing">
+    Open any saved company profile and click **Generate briefing**. CVR-MATE calls the Google Gemini API and returns:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    - A concise company summary drawn from registry data
+    - Key business insights relevant to your sales context
+    - A suggested outreach approach personalized to your brand profile
 
-</CardGroup>
+    You can also generate a **draft outreach email**, a **LinkedIn message**, or a **phone script** from the same profile. Each draft is personalized using your brand profile from onboarding and can be edited before copying it to your outreach tool.
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+    <Note>
+      AI usage is metered per month. The Free plan includes 5 AI uses per month. Starter gives you 10, Professional gives you 50, and Enterprise is unlimited.
+    </Note>
+  </Step>
+</Steps>
+
+## Self-hosted setup
+
+If you are running CVR-MATE on your own infrastructure, follow these steps after cloning the repository.
+
+1. Copy the environment variables file and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Install dependencies, push the database schema, and start the development server:
+
+```bash
+pnpm install
+pnpm db:push
+pnpm dev
+```
+
+The app runs at `http://localhost:3000`.
+
+For a full list of required and optional environment variables, see [Environment variables reference](/environment-variables).
+
+<Tip>
+  Use `pnpm db:studio` to open Drizzle Studio, a browser-based UI for inspecting and editing your database tables during development.
+</Tip>

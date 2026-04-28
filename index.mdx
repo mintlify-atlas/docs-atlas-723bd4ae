@@ -1,133 +1,59 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "CVR-MATE: B2B Lead Intelligence for Danish Companies"
+description: "CVR-MATE combines CVR registry search, AI-assisted workflows, CRM integrations, and team collaboration to help sales teams find and close Danish leads."
 ---
 
-## Setting up
+CVR-MATE is an automated B2B lead intelligence platform built for sales teams targeting Danish companies. It connects directly to the Danish CVR registry to let you search, track, and act on company data — all enriched with AI-generated briefings, outreach drafts, and real-time lead alerts.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get your account set up and run your first CVR company search in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="CVR Search" icon="magnifying-glass" href="/features/cvr-search">
+    Search and filter 700,000+ Danish companies by industry, location, size, and more.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Lead Triggers" icon="bell" href="/features/lead-triggers">
+    Set up automated monitors that alert you when new companies match your criteria.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="AI Tools" icon="sparkles" href="/features/ai-tools">
+    Generate company briefings, draft outreach, and parse searches in natural language.
   </Card>
-</Columns>
+  <Card title="CRM Integrations" icon="plug" href="/features/crm-integrations">
+    Sync companies and contacts to HubSpot, Pipedrive, or LeadConnector.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Build on top of CVR-MATE with the full REST API.
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## How it works
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Search the CVR registry">
+    Use the company search page to filter Danish companies by industry code, location, employee count, company type, and founding date. Save any company to your watchlist with a single click.
+  </Step>
+  <Step title="Set up lead triggers">
+    Create a trigger with your target filters and a schedule (daily or weekly). CVR-MATE automatically runs the query and notifies you of new matching companies — no manual checking required.
+  </Step>
+  <Step title="Enrich with AI">
+    Open any company profile and generate an AI briefing powered by Google Gemini. Get a company summary, key insights, and a suggested outreach approach tailored to your brand profile.
+  </Step>
+  <Step title="Reach out and track">
+    Draft personalized emails, LinkedIn messages, or phone scripts using AI. Create todos linked to companies, sync leads to your CRM, and track all activity in the dashboard.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Plans
 
-## Make your content agent ready
+CVR-MATE is available on four plans, billed in DKK.
 
-Make your docs work for humans and AI agents alike.
+| Plan | Price | Searches/mo | AI uses/mo | Team |
+|------|-------|-------------|------------|------|
+| Free | 0 DKK | 10 | 5 | — |
+| Starter | 299 DKK/mo | 50 | 10 | — |
+| Professional | 699 DKK/mo | 500 | 50 | — |
+| Enterprise | 1,699 DKK/mo | Unlimited | Unlimited | Unlimited members |
 
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
-  </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
-  </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
-  </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
+<Card title="See full plan details" icon="credit-card" href="/billing/plans">
+  Compare all plan limits including saved companies, triggers, CRM connections, and exports.
 </Card>

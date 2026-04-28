@@ -1,0 +1,306 @@
+---
+title: "GET /api/cvr/search — Search Danish companies"
+description: "Search the Danish CVR registry with filters for industry, location, company type, employee count, founding date, and status. Returns enriched company objects."
+---
+
+The search endpoint queries the Danish CVR registry and returns a deduplicated list of company objects matching your filters. At least one filter parameter is required. Responses include computed enrichment fields (`_employeeCount`, `_revenue`, `_profit`, `_equity`) derived from the most recent accounting documents so that clients do not need to recompute them. Results are quota-tracked per user; authenticated sessions are required.
+
+## Request
+
+```
+GET /api/cvr/search
+```
+
+### Authentication
+
+This endpoint requires an active session cookie. Unauthenticated requests receive a `401 Unauthorized` response. Monthly search quota is enforced per user; exceeding it returns `403` with `"upgrade": true` in the response body.
+
+### Query parameters
+
+<ParamField query="name" type="string">
+  Company name text to search for. Maps to the CVR `life_name` parameter. Partial matches are supported; the endpoint also fires suffix-variation queries internally to maximise result coverage.
+</ParamField>
+
+<ParamField query="industry_code" type="string">
+  Primary industry NACE code filter (e.g. `620000` for IT consultancy). Maps to `industry_primary_code`.
+</ParamField>
+
+<ParamField query="industry_text" type="string">
+  Free-text industry description filter. Maps to `industry_primary_text`.
+</ParamField>
+
+<ParamField query="city" type="string">
+  City name filter (e.g. `Copenhagen`). Maps to `address_city`.
+</ParamField>
+
+<ParamField query="zipcode" type="string">
+  Postal code filter (e.g. `2100`). Maps to `address_zipcode`.
+</ParamField>
+
+<ParamField query="municipality" type="string">
+  Municipality name filter (e.g. `Aarhus`). Maps to `address_municipality`.
+</ParamField>
+
+<ParamField query="companyform_code" type="string">
+  Company form code filter. Maps to `companyform_code` in the CVR API (e.g. `80` for ApS, `81` for A/S).
+</ParamField>
+
+<ParamField query="companyform_description" type="string">
+  Company form description filter (e.g. `Anpartsselskab`). Maps to `companyform_description`.
+</ParamField>
+
+<ParamField query="companystatus_code" type="string">
+  Company status code. Defaults to `20` (active) when not supplied. Use `19` for dissolved companies. Maps to `companystatus_code`.
+</ParamField>
+
+<ParamField query="employment_amount" type="string">
+  Exact employee count filter. Maps to `employment_amount` in the CVR API.
+</ParamField>
+
+<ParamField query="employment_interval_low" type="string">
+  Minimum employee count (interval lower bound). Maps to `employment_interval_low`.
+</ParamField>
+
+<ParamField query="seg_employees_max" type="string">
+  Post-filter: maximum employee count applied after CVR API results are returned. Does not map to a CVR API parameter.
+</ParamField>
+
+<ParamField query="seg_revenue_min" type="string">
+  Post-filter: minimum revenue in millions DKK. Applied to the most recent accounting document.
+</ParamField>
+
+<ParamField query="seg_revenue_max" type="string">
+  Post-filter: maximum revenue in millions DKK. Applied to the most recent accounting document.
+</ParamField>
+
+<ParamField query="seg_profit_min" type="string">
+  Post-filter: minimum gross profit/loss in millions DKK. Applied to the most recent accounting document.
+</ParamField>
+
+<ParamField query="seg_profit_max" type="string">
+  Post-filter: maximum gross profit/loss in millions DKK. Applied to the most recent accounting document.
+</ParamField>
+
+<ParamField query="bankrupt" type="string">
+  Filter by bankruptcy status. Maps to `status_bankrupt`. Pass `true` to include only bankrupt companies.
+</ParamField>
+
+<ParamField query="phone" type="string">
+  Filter by phone number. Maps to `contact_phone`.
+</ParamField>
+
+<ParamField query="email" type="string">
+  Filter by contact email. Maps to `contact_email`.
+</ParamField>
+
+<ParamField query="website" type="string">
+  Filter by website URL. Maps to `contact_www`.
+</ParamField>
+
+<ParamField query="life_start" type="string">
+  Founding date lower bound (ISO date, e.g. `2015-01-01`). Maps directly to `life_start`.
+</ParamField>
+
+<ParamField query="life_end" type="string">
+  Founding date upper bound (ISO date). Maps directly to `life_end`.
+</ParamField>
+
+<ParamField query="capital" type="string">
+  Registered share capital filter. Maps to `capital_capital`.
+</ParamField>
+
+<ParamField query="ipo" type="string">
+  IPO status filter. Maps to `capital_ipo`.
+</ParamField>
+
+## Response
+
+A successful response wraps results in an envelope object.
+
+```json
+{
+  "results": [...],
+  "count": 42,
+  "hasMore": false
+}
+```
+
+Each entry in `results` is an enriched `CvrCompany` object:
+
+<ResponseField name="vat" type="number">
+  CVR/VAT registration number (unique identifier for Danish companies).
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  URL-friendly company slug from the CVR registry.
+</ResponseField>
+
+<ResponseField name="life" type="object">
+  <Expandable title="life fields">
+    <ResponseField name="life.name" type="string">
+      Legal company name.
+    </ResponseField>
+    <ResponseField name="life.start" type="string | null">
+      Company founding date (ISO date string).
+    </ResponseField>
+    <ResponseField name="life.end" type="string | null">
+      Dissolution date, or `null` if the company is still active.
+    </ResponseField>
+    <ResponseField name="life.adprotected" type="boolean">
+      Whether the company has opted out of advertising.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="address" type="object">
+  <Expandable title="address fields">
+    <ResponseField name="address.street" type="string | null">
+      Street address.
+    </ResponseField>
+    <ResponseField name="address.zipcode" type="number | null">
+      Postal code.
+    </ResponseField>
+    <ResponseField name="address.cityname" type="string | null">
+      City name.
+    </ResponseField>
+    <ResponseField name="address.municipalityname" type="string | null">
+      Municipality name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="industry" type="object">
+  <Expandable title="industry fields">
+    <ResponseField name="industry.primary.code" type="number | null">
+      Primary NACE industry code.
+    </ResponseField>
+    <ResponseField name="industry.primary.text" type="string | null">
+      Primary industry description.
+    </ResponseField>
+    <ResponseField name="industry.secondary" type="array">
+      Array of secondary industry objects, each with `sequence`, `code`, and `text`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="companyform" type="object">
+  <Expandable title="companyform fields">
+    <ResponseField name="companyform.code" type="number | null">
+      Numeric company form code.
+    </ResponseField>
+    <ResponseField name="companyform.description" type="string | null">
+      Short company type label (e.g. `Anpartsselskab`).
+    </ResponseField>
+    <ResponseField name="companyform.longdescription" type="string | null">
+      Full company type description.
+    </ResponseField>
+    <ResponseField name="companyform.holding" type="boolean">
+      Whether the company is a holding company.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="companystatus" type="object">
+  <Expandable title="companystatus fields">
+    <ResponseField name="companystatus.text" type="string | null">
+      Human-readable status (e.g. `NORMAL`, `OPLØST`).
+    </ResponseField>
+    <ResponseField name="companystatus.start" type="string | null">
+      Date the current status took effect.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="contact" type="object">
+  <Expandable title="contact fields">
+    <ResponseField name="contact.email" type="string | null">
+      Contact email address.
+    </ResponseField>
+    <ResponseField name="contact.www" type="string | null">
+      Company website URL.
+    </ResponseField>
+    <ResponseField name="contact.phone" type="string | null">
+      Contact phone number.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="status" type="object">
+  <Expandable title="status fields">
+    <ResponseField name="status.code" type="number | null">
+      Numeric status code from the CVR registry.
+    </ResponseField>
+    <ResponseField name="status.bankrupt" type="boolean">
+      Whether the company has been declared bankrupt.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="_employeeCount" type="number | null">
+  Computed: most recent employee headcount derived from `employment.months` or `employment.years`.
+</ResponseField>
+
+<ResponseField name="_revenue" type="number | null">
+  Computed: revenue from the most recent accounting document summary (DKK).
+</ResponseField>
+
+<ResponseField name="_profit" type="number | null">
+  Computed: gross profit/loss from the most recent accounting document summary (DKK).
+</ResponseField>
+
+<ResponseField name="_equity" type="number | null">
+  Computed: equity from the most recent accounting document summary (DKK).
+</ResponseField>
+
+### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | No valid filter was provided. |
+| `401`  | No active session. |
+| `403`  | Monthly search quota exceeded. Response includes `"upgrade": true`. |
+| `500`  | Upstream CVR API failure. |
+
+---
+
+## GET /api/cvr/suggest — Company name autocomplete
+
+Returns company name suggestions for typeahead/autocomplete interfaces. This endpoint does not require authentication and does not count against search quota.
+
+### Request
+
+```
+GET /api/cvr/suggest
+```
+
+### Query parameters
+
+<ParamField query="q" type="string" required>
+  Company name prefix to autocomplete. Must be at least 2 characters; shorter values return an empty result set immediately.
+</ParamField>
+
+### Response
+
+```json
+{
+  "results": [
+    { "vat": 12345678, "slug": "acme-aps", "life": { "name": "ACME ApS", ... }, ... },
+    ...
+  ]
+}
+```
+
+`results` is an array of `CvrCompany` objects (same shape as the search response). Returns an empty array on error rather than propagating failures, making it safe to use in non-critical UI flows.
+
+---
+
+## Example
+
+```bash
+curl "https://your-domain.com/api/cvr/search?name=acme&industry_code=620000&city=Copenhagen"
+```
+
+```bash
+# Autocomplete suggestions
+curl "https://your-domain.com/api/cvr/suggest?q=acme"
+```

@@ -1,0 +1,281 @@
+---
+title: "Saved companies API: bookmark and manage leads"
+description: "Endpoints to save, list, update, and remove CVR companies from your personal or team watchlist. Supports notes, tags, and organisation-scoped bookmarks."
+---
+
+The saved companies API lets you bookmark Danish CVR companies as leads or prospects, attaching personal notes and tags to each entry. Saved companies are stored in your CVR-MATE account and can optionally be scoped to a team organisation so that all members see the same watchlist. All endpoints require an authenticated session.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/cvr/saved` | List saved companies for the current user and active organisation. |
+| `POST` | `/api/cvr/saved` | Save a new company bookmark. |
+| `PATCH` | `/api/cvr/saved` | Update the note or tags on an existing bookmark. |
+| `DELETE` | `/api/cvr/saved` | Remove a saved company bookmark. |
+
+---
+
+## GET /api/cvr/saved — List saved companies
+
+Returns all companies bookmarked by the authenticated user, merged with any companies saved under the user's currently active organisation. Results are ordered newest first.
+
+### Request
+
+```
+GET /api/cvr/saved
+```
+
+### Response
+
+```json
+{
+  "results": [...]
+}
+```
+
+<ResponseField name="results" type="array">
+  Array of saved company records.
+
+  <Expandable title="saved company record fields">
+    <ResponseField name="id" type="string (uuid)">
+      Unique identifier for the saved company record.
+    </ResponseField>
+    <ResponseField name="cvr" type="string">
+      CVR/VAT number of the saved company.
+    </ResponseField>
+    <ResponseField name="note" type="string | null">
+      Free-text note attached to this bookmark, or `null` if none was set.
+    </ResponseField>
+    <ResponseField name="tags" type="string[]">
+      Array of tag strings (e.g. `["hot lead", "saas"]`). Empty array if no tags were set.
+    </ResponseField>
+    <ResponseField name="savedAt" type="string">
+      ISO 8601 timestamp of when the company was saved.
+    </ResponseField>
+    <ResponseField name="company" type="object">
+      Embedded cached company record from the CVR-MATE database. Includes denormalised fields for fast display:
+
+      <Expandable title="company fields">
+        <ResponseField name="id" type="string (uuid)">
+          Internal database ID for the company record.
+        </ResponseField>
+        <ResponseField name="vat" type="string">
+          CVR/VAT number.
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Legal company name.
+        </ResponseField>
+        <ResponseField name="address" type="string | null">
+          Street address.
+        </ResponseField>
+        <ResponseField name="zipcode" type="string | null">
+          Postal code.
+        </ResponseField>
+        <ResponseField name="city" type="string | null">
+          City name.
+        </ResponseField>
+        <ResponseField name="municipality" type="string | null">
+          Municipality name.
+        </ResponseField>
+        <ResponseField name="phone" type="string | null">
+          Contact phone number.
+        </ResponseField>
+        <ResponseField name="email" type="string | null">
+          Contact email address.
+        </ResponseField>
+        <ResponseField name="website" type="string | null">
+          Company website URL.
+        </ResponseField>
+        <ResponseField name="industryCode" type="string | null">
+          Primary NACE industry code.
+        </ResponseField>
+        <ResponseField name="industryName" type="string | null">
+          Primary industry description.
+        </ResponseField>
+        <ResponseField name="companyType" type="string | null">
+          Company form label (e.g. `Anpartsselskab`).
+        </ResponseField>
+        <ResponseField name="companyStatus" type="string | null">
+          Current company status (e.g. `NORMAL`).
+        </ResponseField>
+        <ResponseField name="founded" type="string | null">
+          Founding date.
+        </ResponseField>
+        <ResponseField name="employees" type="number | null">
+          Most recent employee count.
+        </ResponseField>
+        <ResponseField name="rawData" type="object">
+          Full `CvrCompany` JSON as last fetched from the CVR API.
+        </ResponseField>
+        <ResponseField name="lastFetchedAt" type="string">
+          ISO timestamp of when the CVR data was last refreshed.
+        </ResponseField>
+        <ResponseField name="createdAt" type="string">
+          ISO timestamp of when the company was first cached.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /api/cvr/saved — Save a company
+
+Creates a new bookmark for the specified CVR company. If the company does not yet exist in the CVR-MATE database it is inserted automatically. If the company has already been saved in the same scope (personal or organisation), the endpoint returns `200` with `alreadyExists: true` rather than creating a duplicate.
+
+<Note>
+  Plan limits apply to the total number of saved companies. Exceeding your plan's limit returns `403` with `"upgrade": true`.
+</Note>
+
+### Request
+
+```
+POST /api/cvr/saved
+Content-Type: application/json
+```
+
+### Body parameters
+
+<ParamField body="vat" type="string" required>
+  The CVR/VAT number of the company to bookmark.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Company name. Used as a fallback display name if `rawData` is not provided or does not contain `life.name`.
+</ParamField>
+
+<ParamField body="rawData" type="object">
+  Full `CvrCompany` JSON object as returned by `/api/cvr/company`. When provided, CVR-MATE extracts and denormalises key fields (city, zipcode, address, industry, company type, status, founded, employees) into the cached company record for fast filtering and display.
+</ParamField>
+
+<ParamField body="note" type="string">
+  A personal free-text note to attach to this bookmark (e.g. `"Spoke to CEO at Nordic SaaS conf"`). Whitespace is trimmed; blank strings are stored as `null`.
+</ParamField>
+
+### Response
+
+```json
+{ "saved": true }
+```
+
+On duplicate:
+
+```json
+{ "saved": true, "alreadyExists": true }
+```
+
+A `201 Created` status is returned for new bookmarks; `200` is returned when the company was already saved.
+
+---
+
+## PATCH /api/cvr/saved — Update note or tags
+
+Updates the note and/or tags on an existing saved company. You must supply at least one of `note` or `tags`.
+
+<Note>
+  Tags are normalised: each tag is trimmed, truncated to 30 characters, and deduplicated. A maximum of 10 tags per bookmark is enforced.
+</Note>
+
+### Request
+
+```
+PATCH /api/cvr/saved
+Content-Type: application/json
+```
+
+### Body parameters
+
+<ParamField body="cvr" type="string" required>
+  The CVR number identifying the saved company to update.
+</ParamField>
+
+<ParamField body="note" type="string">
+  Updated note text. Pass an empty string or `null` to clear the note.
+</ParamField>
+
+<ParamField body="tags" type="string[]">
+  Replacement tags array (e.g. `["hot lead", "partner"]`). This replaces the existing tags entirely — pass an empty array to clear all tags.
+</ParamField>
+
+### Response
+
+```json
+{ "updated": true }
+```
+
+---
+
+## DELETE /api/cvr/saved — Remove a saved company
+
+Removes the bookmark for the specified CVR number from the authenticated user's saved list.
+
+### Request
+
+```
+DELETE /api/cvr/saved?cvr=12345678
+```
+
+### Query parameters
+
+<ParamField query="cvr" type="string" required>
+  The CVR number of the company to remove from saved companies.
+</ParamField>
+
+### Response
+
+```json
+{ "removed": true }
+```
+
+<Warning>
+  Deletion is immediate and permanent. The underlying cached company record is not deleted — only the bookmark is removed.
+</Warning>
+
+---
+
+## Organisation scoping
+
+When a user has an active organisation, `POST /api/cvr/saved` automatically associates the bookmark with that organisation. Organisation-scoped bookmarks are visible to all members of the organisation in their `GET /api/cvr/saved` responses.
+
+Personal bookmarks (no active organisation) are private to the user who created them. Bookmarks are matched in the same scope: a company saved personally and again under an organisation creates two separate records.
+
+---
+
+## Saved searches
+
+You can also persist entire search filter sets for quick re-use. The saved searches API is available at `/api/saved-searches`:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/saved-searches` | List saved search filters for the current user. |
+| `POST` | `/api/saved-searches` | Save a new named filter set. |
+
+Each saved search stores a `name` and a `filters` JSON object matching the parameters accepted by `/api/cvr/search`. Saved searches can also be scoped to an organisation.
+
+---
+
+## Example
+
+```bash
+# Save a company
+curl -X POST https://your-domain.com/api/cvr/saved \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"vat":"12345678","name":"ACME ApS","note":"Strong prospect","rawData":{...}}'
+
+# List saved companies
+curl https://your-domain.com/api/cvr/saved \
+  -b cookies.txt
+
+# Update note and tags
+curl -X PATCH https://your-domain.com/api/cvr/saved \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"cvr":"12345678","note":"Followed up 2026-04-28","tags":["saas","growth","warm"]}'
+
+# Remove a bookmark
+curl -X DELETE "https://your-domain.com/api/cvr/saved?cvr=12345678" \
+  -b cookies.txt
+```

@@ -1,0 +1,59 @@
+---
+title: "Exporting company data to PDF and Excel"
+description: "Export CVR company lists and search results to PDF or Excel/XLSX for offline use or reporting. Monthly export quotas apply based on your plan tier."
+---
+
+CVR-MATE lets you export company data out of the platform for offline use, inclusion in reports, or sharing with stakeholders who do not have a CVR-MATE account. Exports are generated client-side using jsPDF (PDF) and the xlsx library (Excel), so no server-side file storage is required — files are downloaded directly to your browser.
+
+## Export formats
+
+<CardGroup cols={2}>
+  <Card title="PDF">
+    Generated with **jsPDF**. Produces a structured document with a company list table, key fields per row, and your brand name in the header. Suitable for printing or attaching to proposals.
+  </Card>
+  <Card title="Excel / XLSX">
+    Generated with the **xlsx** library. Produces a spreadsheet with one row per company and columns for all available fields. Suitable for further analysis in Excel or Google Sheets.
+  </Card>
+</CardGroup>
+
+## What can be exported
+
+- **Search results** — the current result set from any CVR search
+- **Saved companies** — your full saved company list from `/saved`
+- **Company lists** — any subset of companies you have selected in the UI
+
+Each exported record includes: VAT number, company name, address, city, postcode, municipality, phone, email, website, industry code, industry name, company type, company status, employee count, founded date, registered capital, and any tags you have attached.
+
+## Export quota by plan
+
+<Note>
+Exports are tracked against a monthly quota. The quota resets at the start of each calendar month. Before an export is generated, CVR-MATE checks eligibility against your remaining quota via the `/api/exports/check` endpoint.
+</Note>
+
+| Plan | Exports per month |
+|---|---|
+| Free | 10 |
+| Starter | 15 |
+| Professional | 30 |
+| Enterprise | Unlimited |
+
+If you attempt an export after exhausting your monthly quota, the export action is blocked and you will see a quota-exceeded message with the date your quota resets.
+
+## Managing exports
+
+Navigate to `/exports` to view your export history. Each entry shows the export format, the number of companies included, and the timestamp. From this page you can also initiate new exports.
+
+## Eligibility check
+
+Before generating any export, the client calls:
+
+```
+GET /api/exports/check
+```
+
+This endpoint verifies:
+
+1. Your current plan has an exports quota greater than zero
+2. You have not exceeded your monthly export count
+
+The check is fast and happens transparently — you only see a message if you are ineligible.

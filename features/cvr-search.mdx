@@ -1,0 +1,119 @@
+---
+title: "CVR company search and lead discovery"
+description: "Search the Danish CVR registry with industry, location, employee count, and status filters to discover, save, and track qualified B2B leads."
+---
+
+The Danish CVR (Central Business Register) is the authoritative public registry of all registered companies and participants in Denmark. CVR-MATE gives you a structured, filterable interface on top of this registry so you can slice the full universe of Danish companies down to exactly the segment you want to sell to — and track those companies over time.
+
+## Search filters
+
+Navigate to `/search` to open the CVR search interface. You can combine any number of the following filters to narrow results.
+
+### Industry
+
+| Filter | Description |
+|---|---|
+| `industry_primary_code` | NACE/DB07 industry code (e.g. `6201` for software development) |
+| `industry_primary_text` | Plain-text industry description search |
+| `industry_secondary_code` | Filter on a secondary registered industry code |
+
+<Tip>
+Use the NACE/DB07 code rather than free-text industry search for precise segmentation. For example, code `4711` targets grocery stores specifically, while a text search for "retail" may match hundreds of unrelated categories.
+</Tip>
+
+### Location
+
+| Filter | Description |
+|---|---|
+| `address_city` | City name (e.g. `København`, `Aarhus`) |
+| `address_zipcode` | Single postal code |
+| `address_zipcode_list` | Comma-separated list of postal codes |
+| `address_municipality` | Municipality name |
+| `address_street` | Street name |
+
+### Company characteristics
+
+| Filter | Description |
+|---|---|
+| `companyform_code` | Legal form code (ApS, A/S, IVS, etc.) |
+| `companyform_description` | Free-text legal form description |
+| `companyform_holding` | Filter for holding companies |
+| `companystatus_code` | Company status code |
+| `status_bankrupt` | Exclude or include bankrupt companies |
+
+### Size and founding date
+
+| Filter | Description |
+|---|---|
+| `employment_amount` | Exact employee headcount |
+| `employment_interval_low` | Minimum employee band |
+| `life_start` | Founding date from (ISO date string) |
+| `life_end` | Founding date to (ISO date string) |
+
+### Contact and financial
+
+| Filter | Description |
+|---|---|
+| `contact_email` | Has email on file |
+| `contact_www` | Has website on file |
+| `contact_phone` | Has phone on file |
+| `capital_capital` | Registered capital amount |
+
+## Company profile
+
+Clicking any result opens the full company profile at `/company/[vat]`. Each profile surfaces the fields available in the CVR API:
+
+<CardGroup cols={2}>
+  <Card title="Identity">
+    VAT number, legal name, slug, company form (code, description, holding flag)
+  </Card>
+  <Card title="Address">
+    Street, postcode, city, municipality name
+  </Card>
+  <Card title="Industry">
+    Primary NACE/DB07 code and description, plus secondary industry codes
+  </Card>
+  <Card title="Status">
+    Company status text and start date, bankruptcy flag
+  </Card>
+  <Card title="Contact">
+    Email address, website URL, phone number
+  </Card>
+  <Card title="Employment">
+    Employee count by month, quarter, and year snapshots
+  </Card>
+  <Card title="Financials">
+    Revenue, gross profit/loss, net profit/loss, equity, total assets (from annual reports)
+  </Card>
+  <Card title="Company info">
+    Registered capital, capital currency, stated purpose, founding and dissolution dates
+  </Card>
+</CardGroup>
+
+## Saving companies
+
+Open a company profile and click **Save** to bookmark it. Saved companies appear at `/saved`.
+
+On each saved company you can:
+- Add a **note** — free-text field for your own context or meeting notes
+- Attach **tags** — custom labels such as `hot lead`, `partner`, `follow up Q3`
+
+Tags and notes are stored per user and are not synced to the CVR registry.
+
+## Saved searches
+
+If you run the same filtered search repeatedly, save it as a reusable filter set. Click **Save search** after applying filters and give it a name. All saved searches appear at `/saved-searches` and can be reopened with one click to replay the exact filter combination.
+
+## Person and participant profiles
+
+Every participant (director, owner, board member, etc.) listed in a company's register has a profile at `/person/[id]`. Participant profiles show:
+
+- Name, profession, address
+- All companies the person is registered in, with their roles and ownership percentages
+- Role timeline (start/end dates, election format, special ownership notes)
+
+You can **follow** any participant to receive notifications when their role or company status changes. All followed people are listed at `/followed-people`.
+
+## Recently viewed
+
+CVR-MATE automatically tracks which company profiles you visit. Your 20 most recently viewed companies are accessible at `/recent-companies` for quick re-access without re-running a search.

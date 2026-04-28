@@ -1,0 +1,94 @@
+---
+title: "CVR-MATE pricing plans and feature limits"
+description: "CVR-MATE offers four plans billed in Danish Krone (DKK), from a free tier to Enterprise with team collaboration and unlimited usage."
+---
+
+CVR-MATE offers four subscription plans billed in Danish Krone (DKK). All plans include access to the CVR company database and core search functionality. Higher plans raise or remove usage limits, unlock CRM integrations, and — on Enterprise — enable team workspaces. Monthly billing is available on all paid plans; annual billing saves 20%.
+
+<Note>
+  Feature limits shown as **Unlimited** correspond to `Infinity` values in the plan configuration. There is no hard cap enforced for those features.
+</Note>
+
+## Plan pricing
+
+<CardGroup cols={4}>
+  <Card title="Free" icon="circle">
+    **0 DKK/mo**
+
+    Get started with basic search and a small number of saved companies. No credit card required.
+  </Card>
+  <Card title="Starter" icon="star">
+    **299 DKK/mo**
+
+    239 DKK/mo billed annually. Includes brand personalization and increased usage limits.
+  </Card>
+  <Card title="Professional" icon="bolt">
+    **699 DKK/mo**
+
+    559 DKK/mo billed annually. Adds CRM integration, followed people tracking, and high monthly quotas.
+  </Card>
+  <Card title="Enterprise" icon="building">
+    **1,699 DKK/mo**
+
+    1,359 DKK/mo billed annually. Unlimited usage, team workspaces, up to 3 CRM connections, and priority support.
+  </Card>
+</CardGroup>
+
+Annual billing provides a **20% discount** compared to monthly billing across all paid plans.
+
+## Feature comparison
+
+| Feature | Free | Starter | Professional | Enterprise |
+|---------|:----:|:-------:|:------------:|:----------:|
+| Saved companies | 5 | 25 | 100 | Unlimited |
+| Triggers | 1 | 3 | 5 | Unlimited |
+| Followed people | 0 | 0 | 10 | Unlimited |
+| Tasks | 5 | 10 | Unlimited | Unlimited |
+| Searches / month | 10 | 50 | 500 | Unlimited |
+| AI uses / month | 5 | 10 | 50 | Unlimited |
+| Enrichments / month | 3 | 10 | 30 | Unlimited |
+| Email drafts / month | 3 | 5 | 30 | Unlimited |
+| Exports / month | 10 | 15 | 30 | Unlimited |
+| CRM connections | 0 | 0 | 1 | 3 |
+| Team members | No | No | No | Unlimited |
+| Brand personalization | No | Yes | Yes | Yes |
+| Priority support | No | No | No | Yes |
+
+## Managing your subscription
+
+<Steps>
+  <Step title="Open Settings">
+    Click your avatar in the top-right corner and select **Settings**.
+  </Step>
+  <Step title="Go to Billing">
+    Select **Billing** from the settings sidebar.
+  </Step>
+  <Step title="Open the Stripe portal">
+    Click **Manage subscription**. This opens the Stripe customer portal where you can upgrade, downgrade, switch between monthly and annual billing, update payment details, and download invoices.
+  </Step>
+</Steps>
+
+## Upgrading and downgrading
+
+Plan changes are processed through Stripe. When you change your plan in the Stripe portal, a webhook event is sent to CVR-MATE and your new limits take effect within seconds. No manual intervention is required.
+
+<Warning>
+  If you are on the **Enterprise plan** and have an active team, you must dissolve the organization before downgrading to a lower plan. Teams are exclusive to Enterprise, and any attempt to downgrade while an active organization exists will be blocked with a prompt to resolve the team first.
+</Warning>
+
+Downgrade steps when you have an active team:
+
+<Steps>
+  <Step title="Remove all team members">
+    Go to **Settings → Team** and remove each member, or ask them to leave.
+  </Step>
+  <Step title="Resolve shared resources">
+    Delete or move to personal scope any triggers, saved companies, or tasks in team scope.
+  </Step>
+  <Step title="Delete the organization">
+    In **Settings → Team → Danger Zone**, delete the organization.
+  </Step>
+  <Step title="Downgrade your plan">
+    Return to **Settings → Billing → Manage subscription** and select your new plan.
+  </Step>
+</Steps>

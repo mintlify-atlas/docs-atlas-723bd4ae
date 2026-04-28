@@ -1,0 +1,226 @@
+---
+title: "Lead triggers API: create and manage monitors"
+description: "CRUD endpoints for lead triggers plus a manual run endpoint. Create, update, delete, and execute scheduled CVR company monitors via the REST API."
+---
+
+Lead triggers automate CVR company monitoring by running saved filter sets on a schedule and delivering matching companies as notifications or results. These endpoints manage the full trigger lifecycle — creating, reading, updating, and deleting triggers — as well as manually running a trigger on demand.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/triggers` | List all triggers for the authenticated user |
+| `POST` | `/api/triggers` | Create a new trigger |
+| `GET` | `/api/triggers/[id]` | Get a trigger by ID |
+| `PATCH` | `/api/triggers/[id]` | Update a trigger |
+| `DELETE` | `/api/triggers/[id]` | Delete a trigger |
+| `POST` | `/api/triggers/[id]/run` | Manually run a trigger immediately |
+
+---
+
+## GET /api/triggers
+
+Returns all triggers owned by the authenticated user, ordered by creation date descending.
+
+### Response
+
+<ResponseField name="triggers" type="array">
+  Array of trigger objects.
+
+  <Expandable title="Trigger object fields">
+    <ResponseField name="id" type="string" required>
+      UUID of the trigger.
+    </ResponseField>
+
+    <ResponseField name="name" type="string" required>
+      Human-readable trigger name.
+    </ResponseField>
+
+    <ResponseField name="filters" type="object" required>
+      Search filter set applied on each run. Same shape as CVR search params (e.g. `city`, `industryCode`, `minEmployees`).
+    </ResponseField>
+
+    <ResponseField name="frequency" type="string" required>
+      Scheduling cadence. One of `"daily"`, `"weekly"`, or `"custom"`.
+    </ResponseField>
+
+    <ResponseField name="isActive" type="boolean" required>
+      Whether the trigger is currently scheduled to run.
+    </ResponseField>
+
+    <ResponseField name="notificationChannels" type="string[]" required>
+      Delivery channels for results. Default is `["in_app"]`.
+    </ResponseField>
+
+    <ResponseField name="nextRunAt" type="string | null">
+      ISO 8601 timestamp of the next scheduled execution, or `null` if the trigger is inactive.
+    </ResponseField>
+
+    <ResponseField name="lastRunAt" type="string | null">
+      ISO 8601 timestamp of the most recent execution, or `null` if the trigger has never run.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp when the trigger was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /api/triggers
+
+Creates a new lead trigger. The trigger is scheduled immediately based on the provided frequency and timing fields.
+
+<Note>
+  Trigger limits are enforced at creation time. Attempting to exceed your plan's limit returns HTTP `403`.
+
+  | Plan | Trigger limit |
+  |------|--------------|
+  | Free | 1 |
+  | Starter | 3 |
+  | Professional | 5 |
+  | Enterprise | Unlimited |
+</Note>
+
+### Body
+
+<ParamField body="name" type="string" required>
+  Trigger name, used in notifications and the dashboard UI.
+</ParamField>
+
+<ParamField body="filters" type="object" required>
+  CVR search filter set to evaluate on each run. Accepts the same keys as the company search endpoint — for example `city`, `industry`, `minEmployees`, `maxEmployees`, `companyType`.
+</ParamField>
+
+<ParamField body="frequency" type="string" required>
+  Scheduling cadence. Must be one of:
+  - `"daily"` — runs every day at `scheduledHour:scheduledMinute`
+  - `"weekly"` — runs once per week on `scheduledDayOfWeek`
+  - `"custom"` — uses `cronExpression` directly
+</ParamField>
+
+<ParamField body="isActive" type="boolean">
+  Whether to activate the trigger immediately. Defaults to `true`.
+</ParamField>
+
+<ParamField body="notificationChannels" type="string[]">
+  Where to deliver results. Defaults to `["in_app"]`. Additional channel values depend on your notification configuration.
+</ParamField>
+
+<ParamField body="scheduledHour" type="number">
+  Hour of day to run (0–23, in the configured `timezone`). Defaults to `8`.
+</ParamField>
+
+<ParamField body="scheduledMinute" type="number">
+  Minute of the hour to run (0–59). Defaults to `0`.
+</ParamField>
+
+<ParamField body="scheduledDayOfWeek" type="number">
+  Day of the week for weekly triggers (0 = Sunday, 6 = Saturday). Required when `frequency` is `"weekly"`.
+</ParamField>
+
+<ParamField body="timezone" type="string">
+  IANA timezone string for scheduling. Defaults to `"Europe/Copenhagen"`.
+</ParamField>
+
+<ParamField body="scope" type="string">
+  Visibility scope. One of `"personal"` (default) or `"team"`. Team scope requires an active organization membership.
+</ParamField>
+
+### Example
+
+```bash
+curl -X POST https://your-domain.com/api/triggers \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "name": "Copenhagen SaaS companies",
+    "filters": {"city": "Copenhagen", "industry": "620000"},
+    "frequency": "daily",
+    "scheduledHour": 8,
+    "timezone": "Europe/Copenhagen"
+  }'
+```
+
+---
+
+## GET /api/triggers/[id]
+
+Returns a single trigger by its UUID.
+
+Returns HTTP `404` if the trigger does not exist or does not belong to the authenticated user.
+
+---
+
+## PATCH /api/triggers/[id]
+
+Updates one or more fields on an existing trigger. All body fields are optional; only the supplied fields are modified.
+
+<ParamField body="name" type="string">
+  New trigger name.
+</ParamField>
+
+<ParamField body="filters" type="object">
+  Replacement filter set. The entire `filters` object is replaced, not merged.
+</ParamField>
+
+<ParamField body="frequency" type="string">
+  Updated cadence: `"daily"`, `"weekly"`, or `"custom"`.
+</ParamField>
+
+<ParamField body="isActive" type="boolean">
+  Toggle the trigger on or off. Setting to `false` clears `nextRunAt`.
+</ParamField>
+
+<ParamField body="notificationChannels" type="string[]">
+  Replace the notification channel list.
+</ParamField>
+
+<ParamField body="scheduledHour" type="number">
+  Updated run hour (0–23).
+</ParamField>
+
+<ParamField body="scheduledMinute" type="number">
+  Updated run minute (0–59).
+</ParamField>
+
+<ParamField body="scheduledDayOfWeek" type="number">
+  Updated day of week for weekly triggers.
+</ParamField>
+
+<ParamField body="timezone" type="string">
+  Updated IANA timezone.
+</ParamField>
+
+---
+
+## DELETE /api/triggers/[id]
+
+Permanently deletes the trigger and all associated `triggerResult` rows. This action is irreversible.
+
+Returns HTTP `204` on success.
+
+---
+
+## POST /api/triggers/[id]/run
+
+Executes the trigger immediately, regardless of its schedule. Useful for testing filters or forcing a refresh outside the normal cadence.
+
+### Response
+
+<ResponseField name="success" type="boolean" required>
+  `true` when the run completed without error.
+</ResponseField>
+
+<ResponseField name="matchCount" type="number" required>
+  Number of CVR companies matched by the trigger's filters during this run.
+</ResponseField>
+
+<ResponseField name="companies" type="array" required>
+  Array of company objects returned by the filter evaluation. Each item contains the same fields as a standard CVR company response.
+</ResponseField>
+
+<Tip>
+  Manual runs do not update `lastRunAt` or reschedule `nextRunAt`. They are recorded as a `triggerResult` row but do not affect the trigger's cron schedule.
+</Tip>

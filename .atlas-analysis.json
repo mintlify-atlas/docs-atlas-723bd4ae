@@ -1,0 +1,131 @@
+{
+  "projectType": "saas",
+  "projectName": "CVR-MATE",
+  "projectDescription": "CVR-MATE is an automated B2B lead intelligence platform for Danish companies, combining CVR registry search, AI-assisted workflows, CRM integrations, and team collaboration in a single SaaS product.",
+  "theme": "luma",
+  "primaryColor": "#1b85ec",
+  "lightColor": "#7fbcf4",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "environment-variables"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/cvr-search",
+              "features/lead-triggers",
+              "features/ai-tools",
+              "features/crm-integrations",
+              "features/notifications",
+              "features/exports"
+            ]
+          },
+          {
+            "group": "Team & Billing",
+            "pages": [
+              "team/overview",
+              "team/roles-permissions",
+              "billing/plans"
+            ]
+          },
+          {
+            "group": "Self-Hosting",
+            "pages": [
+              "self-hosting/setup",
+              "self-hosting/database",
+              "self-hosting/background-jobs"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "CVR & Companies",
+            "pages": [
+              "api-reference/cvr-search",
+              "api-reference/company-profile",
+              "api-reference/saved-companies"
+            ]
+          },
+          {
+            "group": "Leads & Automation",
+            "pages": [
+              "api-reference/triggers",
+              "api-reference/todos",
+              "api-reference/notifications"
+            ]
+          },
+          {
+            "group": "AI Endpoints",
+            "pages": [
+              "api-reference/ai-briefing",
+              "api-reference/ai-outreach",
+              "api-reference/ai-enrichment"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "CVR registry search with advanced filters (industry, location, company type, size, founding date)",
+    "Scheduled lead triggers with cron-based monitoring and in-app notifications",
+    "AI-powered company briefings, outreach drafting, and pipeline analysis via Google Gemini",
+    "CRM integrations with HubSpot, Pipedrive, and LeadConnector",
+    "Person/participant tracking with real-time role-change alerts",
+    "Team workspaces with role-based access control (owner, admin, member) — Enterprise plan",
+    "Stripe billing with Free, Starter, Professional, and Enterprise tiers (priced in DKK)",
+    "Real-time in-app notifications via Server-Sent Events (SSE)",
+    "Danish/English internationalization (da/en)",
+    "Data exports (PDF, XLSX) and company notes"
+  ],
+  "publicApiSurface": [
+    "GET /api/cvr/search — Search Danish companies with filter params",
+    "GET /api/cvr/company — Fetch company detail by VAT",
+    "GET /api/cvr/participant — Fetch person/participant detail",
+    "GET /api/cvr/suggest — Autocomplete suggestions for company name search",
+    "GET/POST /api/triggers — List and create lead triggers",
+    "PATCH/DELETE /api/triggers/[id] — Update or delete a trigger",
+    "POST /api/triggers/[id]/run — Manually run a trigger",
+    "GET/POST /api/todos — List and create todos",
+    "PATCH/DELETE /api/todos/[id] — Update or delete a todo",
+    "GET /api/notifications — List notifications",
+    "GET /api/notifications/stream — SSE stream for real-time notifications",
+    "POST /api/ai/company-briefing — Generate AI company briefing",
+    "POST /api/ai/draft-outreach — Generate AI outreach email/LinkedIn/phone script",
+    "POST /api/ai/enrich-company — AI enrichment for a company profile",
+    "POST /api/ai/enrich-person — AI enrichment for a participant/person",
+    "POST /api/ai/parse-search — Parse natural-language query to CVR filter params",
+    "POST /api/ai/suggest-todos — AI-suggested todos for a company",
+    "POST /api/ai/analyze-pipeline — AI pipeline analysis",
+    "GET /api/stripe/subscription — Current subscription status",
+    "POST /api/stripe/checkout — Create Stripe checkout session",
+    "POST /api/stripe/portal — Create Stripe billing portal session",
+    "POST /api/team/create — Create a team/organization (Enterprise only)",
+    "POST /api/team/invite — Invite a team member",
+    "DELETE /api/team/members/[memberId] — Remove a team member",
+    "PATCH /api/team/members/[memberId]/role — Change a member's role",
+    "POST /api/team/leave — Leave a team",
+    "GET /api/dashboard — Dashboard summary data",
+    "GET /api/exports/check — Check export eligibility"
+  ]
+}

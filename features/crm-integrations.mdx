@@ -1,0 +1,81 @@
+---
+title: "CRM integrations: HubSpot, Pipedrive, LeadConnector"
+description: "Push CVR company data and AI enrichment directly to HubSpot, Pipedrive, or LeadConnector via OAuth. CRM access requires Professional plan or above."
+---
+
+CVR-MATE can push company records directly into your CRM so that leads you discover in the Danish registry land in your sales pipeline without any copy-pasting. Once a connection is authorized, you can push individual companies or bulk-push your entire saved company list with a single action.
+
+## Supported CRMs
+
+<CardGroup cols={3}>
+  <Card title="HubSpot">
+    Pushes companies as CRM company objects. Creates or updates based on VAT number deduplication.
+  </Card>
+  <Card title="Pipedrive">
+    Pushes companies as Pipedrive organizations. VAT is stored as a custom field for deduplication.
+  </Card>
+  <Card title="LeadConnector (GoHighLevel)">
+    Pushes companies as GHL businesses via the LeadConnector API. Requires a location-level OAuth authorization.
+  </Card>
+</CardGroup>
+
+## Connecting a CRM
+
+<Steps>
+  <Step title="Open Settings">
+    Navigate to `/settings` and select the **Integrations** tab.
+  </Step>
+  <Step title="Choose your CRM">
+    Click the **Connect** button next to HubSpot, Pipedrive, or LeadConnector.
+  </Step>
+  <Step title="Authorize via OAuth">
+    You will be redirected to the CRM's authorization page. Grant the required permissions and you will be returned to CVR-MATE with an active connection.
+  </Step>
+  <Step title="Push companies">
+    Open any company profile or your saved companies list and use the **Push to CRM** action to sync the record.
+  </Step>
+</Steps>
+
+## What syncs
+
+Each push sends the following fields to your CRM:
+
+| Field | Source |
+|---|---|
+| Company name | `life.name` from CVR |
+| VAT number | `vat` — used as the deduplication key |
+| Address | Street, city, postcode |
+| Municipality | `address.municipalityname` |
+| Phone | `contact.phone` |
+| Email | `contact.email` |
+| Website | `contact.www` |
+| Industry | Primary industry description |
+| Industry code | NACE/DB07 code |
+| Employee count | Latest employment snapshot |
+| Founded date | `life.start` |
+| Company type | Legal form description (ApS, A/S, IVS, etc.) |
+| Company status | Active, dissolved, etc. |
+| Registered capital | Capital amount in DKK |
+| Revenue / Profit / Equity | Latest financial snapshot from annual reports |
+| Tags | Tags you have added to the saved company record |
+
+### AI-enriched push
+
+When you push a company that has an AI enrichment on file, the enrichment data is included in the push payload as additional CRM notes or custom properties, giving your sales team AI-generated context alongside the raw CVR data.
+
+## Plan limits
+
+| Plan | CRM connections |
+|---|---|
+| Free | 0 (CRM not available) |
+| Starter | 0 (CRM not available) |
+| Professional | 1 |
+| Enterprise | 3 |
+
+<Note>
+**Bulk push** — pushing all your saved companies to the CRM in one operation — is available on **Professional** and **Enterprise** plans. On Professional, the bulk push quota is 30 operations per month. Enterprise has no limit.
+</Note>
+
+<Warning>
+CRM OAuth tokens (access token and refresh token) are encrypted at rest using AES encryption before being stored in the database. The encryption key is configured via the `CRM_TOKEN_ENCRYPTION_KEY` environment variable. Do not share or commit this key.
+</Warning>

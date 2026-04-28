@@ -1,0 +1,111 @@
+---
+title: "Team workspaces and collaboration in CVR-MATE"
+description: "Collaborate with your team in a shared workspace. Team features require the Enterprise plan and support shared triggers, companies, and tasks."
+---
+
+Team workspaces in CVR-MATE let multiple users work from a single shared context — pooling saved companies, triggers, and tasks so nothing falls through the cracks when colleagues share accounts or hand off leads. All team functionality is exclusive to the Enterprise plan.
+
+<Warning>
+  Team features require the **Enterprise plan**. Users on Free, Starter, or Professional plans will see an upgrade prompt in place of team controls.
+</Warning>
+
+## Creating a team
+
+<Steps>
+  <Step title="Open Settings">
+    Navigate to **Settings** in the top navigation.
+  </Step>
+  <Step title="Go to the Team section">
+    Select **Team** from the settings sidebar.
+  </Step>
+  <Step title="Create an organization">
+    Click **Create organization**, enter a name, and confirm. This makes you the owner of the new team.
+  </Step>
+</Steps>
+
+An Enterprise subscription is enforced server-side. If you call the create endpoint directly without an Enterprise plan, you will receive a `403` error.
+
+## Inviting members
+
+<Steps>
+  <Step title="Open Team settings">
+    Go to **Settings → Team** and locate the **Members** section.
+  </Step>
+  <Step title="Enter an email address">
+    Type the invitee's email address into the invite field.
+  </Step>
+  <Step title="Choose a role">
+    Select either **Admin** or **Member** from the role dropdown. See [Roles and permissions](/team/roles-permissions) for a full breakdown of what each role can do.
+  </Step>
+  <Step title="Send the invitation">
+    Click **Send invite**. The invitee receives an email with a link to review the invitation.
+  </Step>
+</Steps>
+
+## Invite acceptance flow
+
+Invitations do not auto-accept. When an invitee clicks the link in their email, they are taken to `/invite/[id]` — a preview page showing the organization name, the inviter's name, and the role they are being offered.
+
+From this page, the invitee can:
+
+- **Accept** — joins the organization immediately and is redirected to the CVR-MATE dashboard.
+- **Decline** — marks the invitation as declined, frees the seat, and allows the same email address to be re-invited.
+
+If the invitee is not logged in, they are redirected to `/login` first with a callback URL back to the invite page. If they do not yet have an account, they are prompted to sign up before accepting.
+
+## Switching workspace context
+
+Each user can be in **personal** context or a **team** context at any given time. The active context determines which resources are shown and where newly created resources are saved.
+
+To switch context, go to **Settings → Team** and set the active organization. Your session updates immediately, and all resource lists (companies, triggers, tasks) will reflect the selected context.
+
+## Shared vs. personal resources
+
+Triggers, saved companies, and tasks each have a **scope** that controls visibility.
+
+<Note>
+  When you create a trigger, saved company, or task, you choose between **team** scope (visible to all organization members) and **personal** scope (visible only to you). Personal resources are never shared, even when you are in a team context.
+</Note>
+
+| Scope | Who can see it | Who can edit it |
+|-------|----------------|-----------------|
+| Personal | Creator only | Creator only |
+| Team | All org members | Creator, admins, and owner |
+
+## Leaving a team
+
+Admins and members can leave a team at any time from **Settings → Team → Danger Zone → Leave organization**.
+
+<Warning>
+  When you leave a team, any triggers you created in **team scope** are automatically deactivated and removed from the shared workspace. Your personal-scope resources are not affected.
+</Warning>
+
+Owners cannot leave their own organization. To step down, first transfer ownership to another member, then leave.
+
+## Deleting a team
+
+Only the team **owner** can delete an organization. Before deletion is allowed, all shared resources — triggers, saved companies, and tasks created in team scope — must be transferred to personal scope or deleted. If any team-scoped resources remain, the delete request returns a `409` error with instructions to resolve them first.
+
+<Steps>
+  <Step title="Resolve shared resources">
+    Delete or reassign all triggers, saved companies, and tasks that belong to the team.
+  </Step>
+  <Step title="Open Danger Zone">
+    Go to **Settings → Team → Danger Zone** and click **Delete organization**.
+  </Step>
+  <Step title="Confirm by typing the org name">
+    Type the organization name in the confirmation field and confirm.
+  </Step>
+</Steps>
+
+## Audit log
+
+Every team action is recorded in the organization audit log. Logged events include:
+
+- Invitations sent, accepted, and declined
+- Members joining and leaving
+- Role changes and ownership transfers
+- Organization renames and deletions
+- Permission denials and seat limit events
+
+The audit log is visible to owners and admins under **Settings → Team → Audit log**.

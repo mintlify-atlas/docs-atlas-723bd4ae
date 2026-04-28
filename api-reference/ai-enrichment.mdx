@@ -1,0 +1,184 @@
+---
+title: "AI enrichment for company and person profiles"
+description: "POST /api/ai/enrich-company and enrich-person — add AI-generated market positioning, growth signals, and influence patterns on top of CVR registry data."
+---
+
+The enrichment endpoints use Google Gemini to add an AI intelligence layer on top of CVR data for companies and people. Where the raw CVR registry gives you structured facts — employee counts, industry codes, registered roles — enrichment turns that data into forward-looking signals: market positioning, growth trajectory, risk indicators, and influence patterns. All enrichment results are stored in the `profile_enrichment` table and reused on subsequent requests to avoid redundant quota consumption.
+
+<Tip>
+  Run enrichment on a company before drafting outreach. The AI uses the enrichment data to personalise the message, making it significantly more relevant to the prospect.
+</Tip>
+
+<Note>
+  Enrichment requests count against your monthly `enrichments` quota. Limits per plan are: **3/mo** (Free), **10/mo** (Starter), **30/mo** (Professional), and **unlimited** (Enterprise). If a cached enrichment already exists for the same user and entity, it is returned immediately without consuming quota.
+</Note>
+
+## POST /api/ai/enrich-company
+
+Generates AI-powered enrichment intelligence for a Danish company. The response includes market positioning, growth signals, risk indicators, and other derived intelligence based on available CVR data.
+
+### Request body
+
+<ParamField body="vat" type="string" required>
+  The 8-digit CVR (VAT) number of the target company.
+</ParamField>
+
+<ParamField body="companyName" type="string" required>
+  The registered name of the company.
+</ParamField>
+
+```json
+{
+  "vat": "12345678",
+  "companyName": "Acme A/S"
+}
+```
+
+### Response
+
+<ResponseField name="entityType" type="string">
+  Always `"company"` for this endpoint.
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  The CVR number used as the entity identifier.
+</ResponseField>
+
+<ResponseField name="entityName" type="string">
+  The company name.
+</ResponseField>
+
+<ResponseField name="enrichmentData" type="object">
+  AI-generated enrichment intelligence. The shape of this object varies based on available data, but typically includes fields such as market positioning, growth signals, risk indicators, technology adoption signals, and key decision-maker patterns.
+
+  <Expandable title="Common enrichmentData fields">
+    <ResponseField name="marketPositioning" type="string">
+      A brief assessment of how the company is positioned within its industry.
+    </ResponseField>
+
+    <ResponseField name="growthSignals" type="string[]">
+      Observed or inferred growth indicators (e.g. headcount growth, new office locations, product launches).
+    </ResponseField>
+
+    <ResponseField name="riskIndicators" type="string[]">
+      Potential risk factors such as declining revenue, high ownership turnover, or adverse filings.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "entityType": "company",
+  "entityId": "12345678",
+  "entityName": "Acme A/S",
+  "enrichmentData": {
+    "marketPositioning": "Mid-market IT consultancy competing primarily on project delivery speed and Danish language support.",
+    "growthSignals": [
+      "22% headcount increase over 12 months",
+      "New office registered in Aarhus municipality"
+    ],
+    "riskIndicators": [
+      "Equity ratio below industry median for three consecutive years"
+    ]
+  }
+}
+```
+
+---
+
+## POST /api/ai/enrich-person
+
+Generates AI-powered enrichment intelligence for a CVR participant (a natural person associated with one or more Danish companies). This is especially useful for understanding a decision-maker's career trajectory and current influence before making first contact.
+
+### Request body
+
+<ParamField body="participantNumber" type="string" required>
+  The CVR participant number (P-number) identifying the person.
+</ParamField>
+
+<ParamField body="personName" type="string" required>
+  The full name of the person as registered in CVR.
+</ParamField>
+
+```json
+{
+  "participantNumber": "4000000001",
+  "personName": "John Doe"
+}
+```
+
+### Response
+
+<ResponseField name="entityType" type="string">
+  Always `"person"` for this endpoint.
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  The participant number used as the entity identifier.
+</ResponseField>
+
+<ResponseField name="entityName" type="string">
+  The person's full name.
+</ResponseField>
+
+<ResponseField name="enrichmentData" type="object">
+  AI-generated intelligence about the person.
+
+  <Expandable title="Common enrichmentData fields">
+    <ResponseField name="careerTrajectory" type="string">
+      A summary of the person's career progression based on their CVR role history.
+    </ResponseField>
+
+    <ResponseField name="companyInvolvement" type="string[]">
+      Key companies the person has been involved with, including current and past roles.
+    </ResponseField>
+
+    <ResponseField name="influenceSignals" type="string[]">
+      Indicators of the person's decision-making authority or industry influence.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```json
+{
+  "entityType": "person",
+  "entityId": "4000000001",
+  "entityName": "John Doe",
+  "enrichmentData": {
+    "careerTrajectory": "Serial founder with three exits in the logistics SaaS space over the past decade.",
+    "companyInvolvement": [
+      "CEO at Acme A/S (current)",
+      "Board member at Nordic Freight ApS (current)",
+      "Founder at LogiTrack ApS (exited 2021)"
+    ],
+    "influenceSignals": [
+      "Holds majority ownership stake in two active companies",
+      "Registered director role in four entities simultaneously"
+    ]
+  }
+}
+```
+
+---
+
+## POST /api/ai/enrichment
+
+A general-purpose enrichment endpoint that accepts either a company or a person entity. Use this endpoint when you want a single integration point for all enrichment requests. The `entityType` field in the request determines which enrichment path is executed.
+
+### Request body
+
+<ParamField body="entityType" type="string" required>
+  The type of entity to enrich. One of `"company"` or `"person"`.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The CVR number (for companies) or participant number (for people).
+</ParamField>
+
+<ParamField body="entityName" type="string" required>
+  The name of the company or person.
+</ParamField>
+
+### Response
+
+Returns the same fields as the entity-specific endpoints above (`entityType`, `entityId`, `entityName`, `enrichmentData`), with `enrichmentData` shaped according to the entity type.

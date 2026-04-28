@@ -1,126 +1,101 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "CVR-MATE",
+  "theme": "luma",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#1b85ec",
+    "light": "#7fbcf4"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/995ea1ef-9c14-49f4-9358-3dac9bd226d6.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/Nouman-Usman/CVR-MATE"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/Nouman-Usman/CVR-MATE"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "environment-variables"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/cvr-search",
+              "features/lead-triggers",
+              "features/ai-tools",
+              "features/crm-integrations",
+              "features/notifications",
+              "features/exports"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Team & Billing",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/components",
-              "essentials/reusable-snippets"
+              "team/overview",
+              "team/roles-permissions",
+              "billing/plans"
             ]
           },
           {
-            "group": "Agent ready",
+            "group": "Self-Hosting",
             "pages": [
-              "agent-ready/prompt",
-              "agent-ready/visibility",
-              "agent-ready/contextual",
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "self-hosting/setup",
+              "self-hosting/database",
+              "self-hosting/background-jobs"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/overview",
+              "api-reference/authentication"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "CVR & Companies",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/cvr-search",
+              "api-reference/company-profile",
+              "api-reference/saved-companies"
+            ]
+          },
+          {
+            "group": "Leads & Automation",
+            "pages": [
+              "api-reference/triggers",
+              "api-reference/todos",
+              "api-reference/notifications"
+            ]
+          },
+          {
+            "group": "AI Endpoints",
+            "pages": [
+              "api-reference/ai-briefing",
+              "api-reference/ai-outreach",
+              "api-reference/ai-enrichment"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

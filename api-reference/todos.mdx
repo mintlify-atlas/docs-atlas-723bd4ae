@@ -1,0 +1,185 @@
+---
+title: "Todos API: task management linked to companies"
+description: "CRUD endpoints for todos. Create tasks linked to CVR companies, set priority and due dates, assign to team members, and soft-delete when done."
+---
+
+The todos API manages tasks linked to CVR companies, letting you track follow-ups, calls, and other sales actions alongside the company data that prompted them. Todos can be assigned to team members, prioritised, and tied directly to a company record so that all activity stays in one place.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/todos` | List all todos for the authenticated user |
+| `POST` | `/api/todos` | Create a todo |
+| `GET` | `/api/todos/[id]` | Get a todo by ID |
+| `PATCH` | `/api/todos/[id]` | Update a todo |
+| `DELETE` | `/api/todos/[id]` | Delete a todo |
+
+---
+
+## GET /api/todos
+
+Returns all non-deleted todos owned by or assigned to the authenticated user, ordered by creation date descending.
+
+### Response
+
+<ResponseField name="todos" type="array">
+  Array of todo objects.
+
+  <Expandable title="Todo object fields">
+    <ResponseField name="id" type="string" required>
+      UUID of the todo.
+    </ResponseField>
+
+    <ResponseField name="title" type="string" required>
+      Short title of the task.
+    </ResponseField>
+
+    <ResponseField name="description" type="string | null">
+      Optional longer description or notes.
+    </ResponseField>
+
+    <ResponseField name="isCompleted" type="boolean" required>
+      Whether the task has been marked as done.
+    </ResponseField>
+
+    <ResponseField name="priority" type="string" required>
+      Task priority: `"low"`, `"medium"`, or `"high"`.
+    </ResponseField>
+
+    <ResponseField name="dueDate" type="string | null">
+      ISO date string (`YYYY-MM-DD`) for the deadline, or `null` if no due date is set.
+    </ResponseField>
+
+    <ResponseField name="companyId" type="string | null">
+      UUID of the linked CVR company, or `null` if the todo is not company-linked.
+    </ResponseField>
+
+    <ResponseField name="assignedUserId" type="string | null">
+      ID of the user this todo is assigned to, or `null` if unassigned.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp when the todo was created.
+    </ResponseField>
+
+    <ResponseField name="company" type="object | null">
+      Embedded company data when the todo is linked to a company. Contains the same fields as a standard CVR company response. `null` when `companyId` is not set.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /api/todos
+
+Creates a new todo. Only `title` is required; all other fields are optional.
+
+<Note>
+  Todo limits are enforced at creation time. Attempting to exceed your plan's limit returns HTTP `403`.
+
+  | Plan | Task limit |
+  |------|-----------|
+  | Free | 5 |
+  | Starter | 10 |
+  | Professional | Unlimited |
+  | Enterprise | Unlimited |
+</Note>
+
+### Body
+
+<ParamField body="title" type="string" required>
+  Short title for the task. Shown in list views and notifications.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Longer description or context for the task. Supports plain text.
+</ParamField>
+
+<ParamField body="isCompleted" type="boolean">
+  Initial completion state. Defaults to `false`.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Task priority level. One of `"low"`, `"medium"` (default), or `"high"`.
+</ParamField>
+
+<ParamField body="companyId" type="string">
+  UUID of a CVR company to link this todo to. The company must exist in the CVR-MATE database. When provided, the response will include an embedded `company` object.
+</ParamField>
+
+<ParamField body="assignedUserId" type="string">
+  ID of a team member to assign the todo to. Only valid when `scope` is `"team"` and the target user belongs to your organization.
+</ParamField>
+
+<ParamField body="dueDate" type="string">
+  ISO date string (`YYYY-MM-DD`) for the task deadline. Used by the calendar export feature and due-date sorting.
+</ParamField>
+
+<ParamField body="scope" type="string">
+  Visibility scope. One of `"personal"` (default) or `"team"`. Team-scoped todos are visible to all members of your organization.
+</ParamField>
+
+### Example
+
+```bash
+curl -X POST https://your-domain.com/api/todos \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "title": "Follow up with Acme",
+    "priority": "high",
+    "companyId": "uuid-here",
+    "dueDate": "2025-05-01"
+  }'
+```
+
+---
+
+## GET /api/todos/[id]
+
+Returns a single todo by its UUID, including the embedded `company` object if the todo is company-linked.
+
+Returns HTTP `404` if the todo does not exist, has been soft-deleted, or does not belong to the authenticated user.
+
+---
+
+## PATCH /api/todos/[id]
+
+Updates one or more fields on an existing todo. All body fields are optional; only the supplied fields are modified. Useful for toggling completion, changing priority, or updating the due date.
+
+<ParamField body="title" type="string">
+  Replacement title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Replacement description. Pass `null` to clear it.
+</ParamField>
+
+<ParamField body="isCompleted" type="boolean">
+  Toggle the completion state.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Updated priority: `"low"`, `"medium"`, or `"high"`.
+</ParamField>
+
+<ParamField body="companyId" type="string">
+  Link or re-link the todo to a different company UUID. Pass `null` to unlink.
+</ParamField>
+
+<ParamField body="assignedUserId" type="string">
+  Reassign to a different team member, or pass `null` to unassign.
+</ParamField>
+
+<ParamField body="dueDate" type="string">
+  Updated due date (`YYYY-MM-DD`). Pass `null` to remove the deadline.
+</ParamField>
+
+---
+
+## DELETE /api/todos/[id]
+
+Soft-deletes the todo by setting `deletedAt`. The record is retained in the database for audit purposes but excluded from all list and get responses.
+
+Returns HTTP `204` on success.

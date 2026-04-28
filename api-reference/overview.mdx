@@ -1,0 +1,82 @@
+---
+title: "CVR-MATE REST API — overview and error codes"
+description: "Full REST API covering CVR search, lead triggers, todos, notifications, and AI endpoints. Base URL: /api. All routes require a session cookie."
+---
+
+CVR-MATE exposes a REST API that covers every platform feature — the web app itself is built entirely on top of this API. If you are integrating CVR-MATE programmatically or building tooling on top of it, you use the same API the frontend uses.
+
+<Note>
+  All `/api/*` routes require an authenticated session cookie. See [Authentication](/api-reference/authentication) for how to obtain and include a session.
+</Note>
+
+## Base URL
+
+All endpoints are relative to your CVR-MATE deployment:
+
+```
+https://your-domain.com/api
+```
+
+For local development the base URL is `http://localhost:3000/api`.
+
+## Endpoint groups
+
+<CardGroup cols={2}>
+  <Card title="CVR & Companies" icon="building" href="/api-reference/cvr-search">
+    Search and retrieve Danish company data from the CVR registry. Includes full-text search, filters, company profiles, participant lookups, and saved/recent companies.
+
+    **Prefix:** `/api/cvr/*`
+  </Card>
+  <Card title="Leads & Triggers" icon="bolt" href="/api-reference/triggers">
+    Create and manage lead triggers that run on a schedule or on demand. Triggers monitor CVR changes and surface new leads automatically.
+
+    **Prefix:** `/api/triggers/*`
+  </Card>
+  <Card title="Todos" icon="check" href="/api-reference/todos">
+    Create, update, and delete todos linked to specific companies. Used to track outreach tasks and follow-up actions in the sales workflow.
+
+    **Prefix:** `/api/todos/*`
+  </Card>
+  <Card title="Notifications" icon="bell" href="/api-reference/notifications">
+    Retrieve and manage in-app notifications. Includes a Server-Sent Events stream endpoint (`/api/notifications/stream`) for real-time delivery.
+
+    **Prefix:** `/api/notifications/*`
+  </Card>
+  <Card title="AI endpoints" icon="sparkles" href="/api-reference/ai-briefing">
+    AI-powered endpoints for company briefings, pipeline analysis, natural-language search parsing, todo suggestions, and outreach drafting. Powered by Gemini.
+
+    **Prefix:** `/api/ai/*`
+  </Card>
+  <Card title="Saved companies" icon="bookmark" href="/api-reference/saved-companies">
+    Save and unsave companies for quick access. Returns the current user's list of saved companies with full CVR data.
+
+    **Prefix:** `/api/cvr/saved`
+  </Card>
+</CardGroup>
+
+## Response format
+
+All endpoints return JSON. Successful responses include a top-level data object or array. The exact shape is documented per endpoint.
+
+## Error responses
+
+CVR-MATE uses standard HTTP status codes for all errors.
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | No active session, or session has expired. Sign in again. |
+| `403 Forbidden` | Authenticated but your plan or role does not permit this action. |
+| `404 Not Found` | The requested resource does not exist. |
+| `409 Conflict` | The request conflicts with existing data (e.g., duplicate entry). |
+| `429 Too Many Requests` | Rate limit exceeded. AI endpoints are subject to per-plan monthly quotas. |
+| `500 Internal Server Error` | An unexpected server-side error occurred. |
+
+All error responses use the same body shape:
+
+```json
+{ "error": "Error message here" }
+```
+
+## Rate limiting
+
+Standard API endpoints do not impose hard per-request rate limits beyond what your infrastructure enforces. AI endpoints (`/api/ai/*`) are subject to **per-plan monthly usage quotas**. When you exceed your quota, the endpoint returns `429 Too Many Requests` with an explanatory error message.

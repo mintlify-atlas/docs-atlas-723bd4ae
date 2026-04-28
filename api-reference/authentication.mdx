@@ -1,0 +1,87 @@
+---
+title: "Authenticate API requests to CVR-MATE"
+description: "CVR-MATE uses session cookies for authentication. Sign in at /login or via POST /api/auth/sign-in/email. A 401 means your session is missing or expired."
+---
+
+CVR-MATE's API uses session-based authentication via HTTP cookies. Every API route under `/api/*` — except the auth routes at `/api/auth/*` — requires an active session. There are no API keys or bearer tokens; authentication is established by signing in and then presenting the session cookie on every request.
+
+<Note>
+  In a browser context, cookies are managed automatically. You do not need to read, store, or attach them manually — the browser handles this for every request to the same domain.
+</Note>
+
+## How authentication works
+
+<Steps>
+  <Step title="Sign in">
+    Navigate to `/login` and sign in with your email and password, or use **Continue with Google** for OAuth. The server validates your credentials and creates a session.
+  </Step>
+  <Step title="Receive the session cookie">
+    After a successful sign-in, the server sets the `better-auth.session_token` cookie (or `__Secure-better-auth.session_token` on HTTPS). You do not need to handle this manually in a browser.
+  </Step>
+  <Step title="Make authenticated requests">
+    Include the session cookie in all subsequent API requests. Browsers attach cookies automatically for same-domain requests. For programmatic access, capture and replay the cookie as shown below.
+  </Step>
+</Steps>
+
+## Programmatic sign-in
+
+When making API calls outside of a browser — for example, in a script or server-to-server context — sign in via the auth endpoint and save the cookie for reuse.
+
+**Endpoint:** `POST /api/auth/sign-in/email`
+
+**Request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "yourpassword",
+  "rememberMe": true
+}
+```
+
+**Example using curl:**
+
+```bash
+# Sign in and save the session cookie to cookies.txt
+curl -X POST https://your-domain.com/api/auth/sign-in/email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"yourpassword","rememberMe":true}' \
+  -c cookies.txt
+
+# Use the saved cookie for subsequent requests
+curl https://your-domain.com/api/cvr/search?query=acme \
+  -b cookies.txt
+```
+
+The `-c cookies.txt` flag saves cookies from the response; `-b cookies.txt` sends them on subsequent requests.
+
+## Session details
+
+| Property | Value |
+|----------|-------|
+| Cookie name | `better-auth.session_token` (HTTP), `__Secure-better-auth.session_token` (HTTPS) |
+| Session lifetime | 7 days |
+| Session refresh | Refreshed automatically if the session is more than 24 hours old |
+
+Sessions are extended automatically on activity, so active users stay signed in without interruption.
+
+## Protected and public routes
+
+All `/api/*` routes require authentication **except** `/api/auth/*`. The `/invite/[invitationId]` page is publicly accessible so recipients can accept team invitations without being signed in.
+
+| Route pattern | Auth required |
+|---------------|--------------|
+| `/api/auth/*` | No |
+| `/api/*` (all other routes) | Yes |
+| `/invite/*` | No |
+
+## Error responses
+
+| Status | Cause | Resolution |
+|--------|-------|------------|
+| `401 Unauthorized` | Session cookie is missing or the session has expired | Sign in again to obtain a new session |
+| `403 Forbidden` | Authenticated but your plan or role does not permit the action | Upgrade your plan or contact your organization admin |
+
+<Warning>
+  Never expose your session cookie in client-side JavaScript, logs, or version control. A valid session cookie grants full access to your account. If you believe a session has been compromised, sign out from all devices in your account settings.
+</Warning>
